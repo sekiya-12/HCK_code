@@ -1,0 +1,45 @@
+#include <WiFiS3.h>
+#include <WiFiUdp.h>
+#include "function.h"
+#include "Arduino_LED_Matrix.h" 
+
+uint32_t LastBarTime = 0;
+uint16_t Interval = 2000;
+uint8_t BarCount = 0;
+IPAddress BCaddress(255, 255, 255, 255);
+uint16_t Port = 3000;
+
+WiFiUDP udp;
+ArduinoLEDMatrix matrix; 
+
+uint8_t BPM = 120; // BPMの初期値
+uint32_t LastPressTime = 0; // スイッチが最後に押された時間
+bool Flag = false; // BPM変更が発生したかどうかのフラグ
+
+char ssid[] = "WIFI_SSID";
+char pass[] = "WIFI_PASSWORD";
+
+void setup() {
+  Serial.begin(115200);
+  matrix.begin(); 
+  
+  pinMode(2, INPUT); 
+  pinMode(3, INPUT);
+
+  Serial.println("Wi-Fiに接続中...");
+  WiFi.begin(ssid, pass);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\n接続完了!");
+  udp.begin(Port);
+}
+
+void loop() {
+  // 小節コントロール
+  Bar_control(&LastBarTime, Interval, &BarCount, BCaddress, Port, udp);
+  
+  // === BPMコントロール ===
+  BPM_control(&BPM, &Interval, &LastPressTime, &Flag, BCaddress, Port, udp);
+}
