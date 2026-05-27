@@ -12,36 +12,36 @@ int currentBpm = 80;
 String currentDurationName = "REST";
 
 // --- 配列データ（変数名は維持） ---
-String[] melody = {
-  "C4", "D4", "E4", "F4",
-  "E4", "D4", "C4",
-  "E4", "F4", "G4", "A4",
-  "G4", "F4", "E4",
-  "C4", "C4",
-  "C4", "C4",
-  "C4", "C4", "D4", "D4", "E4", "E4", "F4", "F4",
-  "E4", "D4", "C4"
-};
+//String[] melody = {
+//  "C4", "D4", "E4", "F4",
+//  "E4", "D4", "C4",
+//  "E4", "F4", "G4", "A4",
+//  "G4", "F4", "E4",
+//  "C4", "C4",
+//  "C4", "C4",
+//  "C4", "C4", "D4", "D4", "E4", "E4", "F4", "F4",
+//  "E4", "D4", "C4"
+//};
 
-float[] duration = {
-  1.0f, 1.0f, 1.0f, 1.0f,
-  1.0f, 1.0f, 2.0f,
-  1.0f, 1.0f, 1.0f, 1.0f,
-  1.0f, 1.0f, 2.0f,
-  2.0f, 2.0f,
-  2.0f, 2.0f,
-  0.5f, 0.5f, 0.5f, 0.5f,
-  0.5f, 0.5f, 0.5f, 0.5f,
-  1.0f, 1.0f, 2.0f
-};
+//float[] duration = {
+//  1.0f, 1.0f, 1.0f, 1.0f,
+//  1.0f, 1.0f, 2.0f,
+//  1.0f, 1.0f, 1.0f, 1.0f,
+//  1.0f, 1.0f, 2.0f,
+//  2.0f, 2.0f,
+//  2.0f, 2.0f,
+//  0.5f, 0.5f, 0.5f, 0.5f,
+//  0.5f, 0.5f, 0.5f, 0.5f,
+//  1.0f, 1.0f, 2.0f
+//};
 // 基準音符長（デフォルト: 1.0 = 1拍単位）
 float ToneLength = 1.0f;
 
 float[] maxAmp = new float[29];
 // 再生中の情報トラッキング
-boolean isPlayingSequence = false;
-float[] scheduledStartTimes = null;
-float playStartTimeSec = 0.0f;
+//boolean isPlayingSequence = false;
+//float[] scheduledStartTimes = null;
+//float playStartTimeSec = 0.0f;
 long lastNoteEndMillis = 0;
 float currentToneLengthSec = 0.0f; // 現在鳴っている音の秒数
 float currentToneLengthBeats = 0.0f; // 現在鳴っている音の拍数
@@ -116,35 +116,35 @@ void setTromboneWave() {
   );
 }
 
-void playSong() {
-  out.pauseNotes();
+//void playSong() {
+//  out.pauseNotes();
   // BPM に基づいて拍の長さ（秒）を計算
-  float beatSec = 60.0f / max(1, currentBpm);
-  scheduledStartTimes = new float[melody.length];
-  float t = 0.0f; // 再生開始時刻（秒）
-  for (int i = 0; i < melody.length; i++) {
+//  float beatSec = 60.0f / max(1, currentBpm);
+//  scheduledStartTimes = new float[melody.length];
+//  float t = 0.0f; // 再生開始時刻（秒）
+//  for (int i = 0; i < melody.length; i++) {
     // 1. 次の音に進むための「本来の枠の長さ」（リズムの骨組み）
-    float stepDuration = duration[i] * ToneLength * beatSec; 
+//    float stepDuration = duration[i] * ToneLength * beatSec; 
+//    
+//    // 2. 実際に音を鳴らす長さ（ここでは本来の長さの 85% に縮め、15% の隙間・無音を作っています）
+//    float noteDuration = stepDuration * 0.85f; 
     
-    // 2. 実際に音を鳴らす長さ（ここでは本来の長さの 85% に縮め、15% の隙間・無音を作っています）
-    float noteDuration = stepDuration * 0.85f; 
-    
-    scheduledStartTimes[i] = t;
+//    scheduledStartTimes[i] = t;
     // 【変更】第2引数（音の長さ）を、短くした「noteDuration」に変える
-    out.playNote(t, noteDuration,
-      new HackInstrument(Frequency.ofPitch(melody[i]).asHz() * 0.5f, 
-      maxAmp[i], currentWaveform));
+//    out.playNote(t, noteDuration,
+//      new HackInstrument(Frequency.ofPitch(melody[i]).asHz() * 0.5f, 
+//      maxAmp[i], currentWaveform));
       
     // 【変更】次の音への移動時刻は、本来の枠である「stepDuration」分だけ進める
-    t += stepDuration;
-  }
+//    t += stepDuration;
+//  }
   // トラッキング用
-  playStartTimeSec = millis() / 1000.0f;
-  isPlayingSequence = true;
-  currentToneLengthSec = (melody.length>0) ? duration[0] * ToneLength * beatSec : 0.0f;
-  currentToneLengthBeats = (melody.length>0) ? duration[0] * ToneLength : 0.0f;
-  out.resumeNotes();
-}
+//  playStartTimeSec = millis() / 1000.0f;
+//  isPlayingSequence = true;
+//  currentToneLengthSec = (melody.length>0) ? duration[0] * ToneLength * beatSec : 0.0f;
+//  currentToneLengthBeats = (melody.length>0) ? duration[0] * ToneLength : 0.0f;
+//  out.resumeNotes();
+//}
 
 void draw() {
   background(255); // 画面を白（255）で塗りつぶしてリセット
@@ -157,29 +157,31 @@ void draw() {
 
   // 各種情報の表示
   textSize(18);
-  text("Press P to test", 220, 120);              // 操作ガイド
+  //text("Press P to test", 220, 120);              // 操作ガイド
   text("Note: " + currentNote, 240, 160);         // 演奏中の音名
   text("BPM: " + currentBpm, 245, 200);           // 現在のテンポ
   // リアルタイムの音長表示（拍数と秒数）
+  //String lenStr = "REST";
+  //if (isPlayingSequence) {
+  //  float elapsed = millis() / 1000.0f - playStartTimeSec;
+  //  int idx = -1;
+  //  for (int i = 0; i < melody.length; i++) {
+  //    float s = scheduledStartTimes[i];
+  //    float d = duration[i] * ToneLength * (60.0f / max(1, currentBpm));
+  //    if (elapsed >= s && elapsed < s + d) { idx = i; break; }
+  //  }
+  //  if (idx >= 0) {
+  //    currentToneLengthBeats = duration[idx] * ToneLength;
+  //    currentToneLengthSec = duration[idx] * ToneLength * (60.0f / max(1, currentBpm));
+  //    lenStr = nf(currentToneLengthBeats, 1, 2) + " beats / " + nf(currentToneLengthSec, 1, 2) + " s";
+  //  } else {
+  //    // シーケンスが終了したかもしれない
+  //    float lastEnd = (melody.length>0) ? (scheduledStartTimes[melody.length-1] + duration[melody.length-1] * ToneLength * (60.0f / max(1, currentBpm))) : 0;
+  //    if (elapsed > lastEnd) { isPlayingSequence = false; currentToneLengthSec = 0; currentToneLengthBeats = 0; }
+  //  }
+  //}
+  // リアルタイムの音長表示（拍数と秒数）
   String lenStr = "REST";
-  if (isPlayingSequence) {
-    float elapsed = millis() / 1000.0f - playStartTimeSec;
-    int idx = -1;
-    for (int i = 0; i < melody.length; i++) {
-      float s = scheduledStartTimes[i];
-      float d = duration[i] * ToneLength * (60.0f / max(1, currentBpm));
-      if (elapsed >= s && elapsed < s + d) { idx = i; break; }
-    }
-    if (idx >= 0) {
-      currentToneLengthBeats = duration[idx] * ToneLength;
-      currentToneLengthSec = duration[idx] * ToneLength * (60.0f / max(1, currentBpm));
-      lenStr = nf(currentToneLengthBeats, 1, 2) + " beats / " + nf(currentToneLengthSec, 1, 2) + " s";
-    } else {
-      // シーケンスが終了したかもしれない
-      float lastEnd = (melody.length>0) ? (scheduledStartTimes[melody.length-1] + duration[melody.length-1] * ToneLength * (60.0f / max(1, currentBpm))) : 0;
-      if (elapsed > lastEnd) { isPlayingSequence = false; currentToneLengthSec = 0; currentToneLengthBeats = 0; }
-    }
-  }
   // シリアルでの即時再生表示が優先
   if (millis() < lastNoteEndMillis) {
     lenStr = nf(currentToneLengthBeats, 1, 2) + " beats / " + nf(currentToneLengthSec, 1, 2) + " s";
@@ -203,11 +205,11 @@ void serialEvent(Serial p) {
       
       if (!currentNote.equals("REST")) {
         float beatSec = 60.0f / max(1, currentBpm);
-        float dsec = 1.0f * ToneLength * beatSec;
-        out.playNote(0, dsec, new HackInstrument(Frequency.ofPitch(currentNote).asHz() * 0.5f, 0.15f, currentWaveform));
+        float dsec = noteDuration * ToneLength * beatSec;
+        out.playNote(0, dsec, new HackInstrument(Frequency.ofPitch(currentNote).asHz() * 0.5f, velocity, currentWaveform));
         // 表示用の更新
         currentToneLengthSec = dsec;
-        currentToneLengthBeats = 1.0f * ToneLength;
+        currentToneLengthBeats = noteDuration * ToneLength;
         lastNoteEndMillis = millis() + (long)(dsec * 1000);
       }
     }
@@ -222,6 +224,6 @@ void keyPressed() {
     case '3': currentWaveform = Waves.SAW; break;
     case '4': currentWaveform = Waves.SQUARE; break;
     case '6': setTromboneWave(); break;
-    case 'p': playSong(); break;
+    //case 'p': playSong(); break;
   }
 }
