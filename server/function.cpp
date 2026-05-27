@@ -23,7 +23,7 @@ void Bar_control(uint32_t *LastBarTime, uint16_t Interval, uint8_t *BarCount, IP
     udp.endPacket();
 
     // デバッグ用出力
-    Serial.print("送信した小節番号: ");
+    Serial.print("小節番号: ");
     Serial.println(*BarCount);
   }
 }

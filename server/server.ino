@@ -6,7 +6,7 @@
 // --- 小節コントロール用変数 ---
 uint32_t LastBarTime = 0;
 uint16_t Interval = 2000;
-uint8_t BarCount = 0;
+uint8_t BarCount = 39;
 IPAddress BCaddress(255, 255, 255, 255);
 uint16_t Port = 3000;
 
@@ -18,12 +18,14 @@ uint8_t BPM = 120; // BPMの初期値
 uint32_t LastPressTime = 0; // スイッチが最後に押された時間
 bool Flag = false; // BPM変更が発生したかどうかのフラグ
 
-char ssid[] = "WIFI_SSID";
-char pass[] = "WIFI_PASSWORD";
+char ssid[] = "hackathon003-WPA2";
+char pass[] = "hackathon003";
 
 void setup() {
   Serial.begin(115200);
   matrix.begin(); 
+
+  Interval = (60000 / BPM) * 4;
   
   pinMode(2, INPUT); 
   pinMode(3, INPUT);
