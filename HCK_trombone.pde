@@ -98,36 +98,6 @@ void setTromboneWave() {
   );
 }
 
-//void playSong() {
-//  out.pauseNotes();
-  // BPM に基づいて拍の長さ（秒）を計算
-//  float beatSec = 60.0f / max(1, currentBpm);
-//  scheduledStartTimes = new float[melody.length];
-//  float t = 0.0f; // 再生開始時刻（秒）
-//  for (int i = 0; i < melody.length; i++) {
-    // 1. 次の音に進むための「本来の枠の長さ」（リズムの骨組み）
-//    float stepDuration = duration[i] * ToneLength * beatSec; 
-//    
-//    // 2. 実際に音を鳴らす長さ（ここでは本来の長さの 85% に縮め、15% の隙間・無音を作っています）
-//    float noteDuration = stepDuration * 0.85f; 
-    
-//    scheduledStartTimes[i] = t;
-    // 【変更】第2引数（音の長さ）を、短くした「noteDuration」に変える
-//    out.playNote(t, noteDuration,
-//      new HackInstrument(Frequency.ofPitch(melody[i]).asHz() * 0.5f, 
-//      maxAmp[i], currentWaveform));
-      
-    // 【変更】次の音への移動時刻は、本来の枠である「stepDuration」分だけ進める
-//    t += stepDuration;
-//  }
-  // トラッキング用
-//  playStartTimeSec = millis() / 1000.0f;
-//  isPlayingSequence = true;
-//  currentToneLengthSec = (melody.length>0) ? duration[0] * ToneLength * beatSec : 0.0f;
-//  currentToneLengthBeats = (melody.length>0) ? duration[0] * ToneLength : 0.0f;
-//  out.resumeNotes();
-//}
-
 void draw() {
   background(255); // 画面を白（255）で塗りつぶしてリセット
 
@@ -142,26 +112,7 @@ void draw() {
   //text("Press P to test", 220, 120);              // 操作ガイド
   text("Note: " + currentNote, 240, 160);         // 演奏中の音名
   text("BPM: " + currentBpm, 245, 200);           // 現在のテンポ
-  // リアルタイムの音長表示（拍数と秒数）
-  //String lenStr = "REST";
-  //if (isPlayingSequence) {
-  //  float elapsed = millis() / 1000.0f - playStartTimeSec;
-  //  int idx = -1;
-  //  for (int i = 0; i < melody.length; i++) {
-  //    float s = scheduledStartTimes[i];
-  //    float d = duration[i] * ToneLength * (60.0f / max(1, currentBpm));
-  //    if (elapsed >= s && elapsed < s + d) { idx = i; break; }
-  //  }
-  //  if (idx >= 0) {
-  //    currentToneLengthBeats = duration[idx] * ToneLength;
-  //    currentToneLengthSec = duration[idx] * ToneLength * (60.0f / max(1, currentBpm));
-  //    lenStr = nf(currentToneLengthBeats, 1, 2) + " beats / " + nf(currentToneLengthSec, 1, 2) + " s";
-  //  } else {
-  //    // シーケンスが終了したかもしれない
-  //    float lastEnd = (melody.length>0) ? (scheduledStartTimes[melody.length-1] + duration[melody.length-1] * ToneLength * (60.0f / max(1, currentBpm))) : 0;
-  //    if (elapsed > lastEnd) { isPlayingSequence = false; currentToneLengthSec = 0; currentToneLengthBeats = 0; }
-  //  }
-  //}
+  
   // リアルタイムの音長表示（拍数と秒数）
   String lenStr = "REST";
   // シリアルでの即時再生表示が優先
@@ -206,6 +157,5 @@ void keyPressed() {
     case '3': currentWaveform = Waves.SAW; break;
     case '4': currentWaveform = Waves.SQUARE; break;
     case '6': setTromboneWave(); break;
-    //case 'p': playSong(); break;
   }
 }
