@@ -1,5 +1,36 @@
 #include "function.h"
 
+// ==========================================
+// 小節コントロール (Bar_control)
+// ==========================================
+void Bar_control(uint32_t *LastBarTime, uint16_t Interval, uint8_t *BarCount, IPAddress BCaddress, uint16_t Port, WiFiUDP &udp) {
+  uint32_t temp = millis();
+  
+  // Interval（間隔）以上時間が経過したかチェック
+  if (temp - *LastBarTime >= Interval) {
+    *LastBarTime = temp;
+    
+    // 小節番号のカウント（上限39）
+    if (*BarCount >= 39) {
+      *BarCount = 0;
+    } else {
+      *BarCount += 1;
+    }
+    
+    // UDPブロードキャスト送信
+    udp.beginPacket(BCaddress, Port);
+    udp.write(*BarCount);
+    udp.endPacket();
+
+    // デバッグ用出力
+    Serial.print("送信した小節番号: ");
+    Serial.println(*BarCount);
+  }
+}
+
+// ==========================================
+// BPMコントロール (BPM_control)
+// ==========================================
 void BPM_control(uint8_t *BPM, uint16_t *Interval, uint32_t *LastPressTime, bool *Flag, IPAddress BCaddress, uint16_t Port, WiFiUDP &udp) {
   
   // D2ピン（BPMアップ）

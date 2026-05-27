@@ -3,6 +3,7 @@
 #include "function.h"
 #include "Arduino_LED_Matrix.h" 
 
+// --- 小節コントロール用変数 ---
 uint32_t LastBarTime = 0;
 uint16_t Interval = 2000;
 uint8_t BarCount = 0;
@@ -12,6 +13,7 @@ uint16_t Port = 3000;
 WiFiUDP udp;
 ArduinoLEDMatrix matrix; 
 
+// --- BPMコントロール用変数 ---
 uint8_t BPM = 120; // BPMの初期値
 uint32_t LastPressTime = 0; // スイッチが最後に押された時間
 bool Flag = false; // BPM変更が発生したかどうかのフラグ
@@ -37,9 +39,7 @@ void setup() {
 }
 
 void loop() {
-  // 小節コントロール
   Bar_control(&LastBarTime, Interval, &BarCount, BCaddress, Port, udp);
   
-  // === BPMコントロール ===
   BPM_control(&BPM, &Interval, &LastPressTime, &Flag, BCaddress, Port, udp);
 }
