@@ -8,17 +8,13 @@ AudioOutput out;
 Waveform currentWaveform;
 // --- 表示用変数 ---
 String currentNote = "REST";
-int currentBpm = 80;
+int currentBpm = 120;
 String currentDurationName = "REST";
 
 // 基準音符長（デフォルト: 1.0 = 1拍単位）
 float ToneLength = 1.0f;
 
 float[] maxAmp = new float[29];
-// 再生中の情報トラッキング
-//boolean isPlayingSequence = false;
-//float[] scheduledStartTimes = null;
-//float playStartTimeSec = 0.0f;
 long lastNoteEndMillis = 0;
 float currentToneLengthSec = 0.0f; // 現在鳴っている音の秒数
 float currentToneLengthBeats = 0.0f; // 現在鳴っている音の拍数
@@ -27,6 +23,8 @@ float currentToneLengthBeats = 0.0f; // 現在鳴っている音の拍数
 class HackInstrument implements Instrument
 {
   Oscil wave;
+  MoogFilter filter; 
+  Delay delay;
   ADSR ampEnv;
   Line freqEnv;
   float baseFreq;
@@ -38,12 +36,15 @@ class HackInstrument implements Instrument
     maxAmpValue = amplitude;
     wave = new Oscil(frequency * 0.96f, 1.0, wf);
 
+    filter = new MoogFilter(1200.0f, 0.2f, MoogFilter.Type.LP);
+    delay = new Delay(0.5f, 0.2f, 0.3f, 0.3f);
+
     // ADSRの引数: (最大音量, アタック秒, ディケイ秒, サステイン比率, リリース秒)
     // 管楽器らしく 0.08秒かけて音が立ち上がり、吹いている間は 80% の音量をキープします
-    ampEnv = new ADSR(amplitude, 0.08f, 0.05f, 0.8f, 0.1f);
+    ampEnv = new ADSR(amplitude, 0.08f, 0.05f, 0.8f, 0.3f);
     
     // 波形の出力を音量エンベロープ（ampEnv）にパッチする
-    wave.patch(ampEnv);
+    wave.patch(filter).patch(delay).patch(ampEnv);
     
     freqEnv = new Line();
     freqEnv.patch(wave.frequency);
@@ -65,27 +66,22 @@ class HackInstrument implements Instrument
 
 void setup()
 {
-  // --- ここから差し替え ---
-  println("=== 【確認】PCが認識しているポート一覧 ===");
-  printArray(Serial.list());
-  println("======================================");
+  size(600, 300);
+  textSize(24);
+  minim = new Minim(this);
+  out = minim.getLineOut();
+  out.setTempo(currentBpm);
   
-  if (Serial.list().length > 0) {
-    int portIndex = 2;
-    
-    String targetPort = Serial.list()[portIndex];
-    println("▶️ 現在、次のポートに接続しています: [" + portIndex + "] " + targetPort);
-    
-    try {
-      myPort = new Serial(this, targetPort, 115200);
-      myPort.bufferUntil('\n');
-      println("成功: ポートを開くことに成功しました。データを待機しています。");
-    } catch (Exception e) {
-      println("エラー: ポートを開けませんでした。シリアルモニターが開いたままになっていないか確認してください。");
-    }
-  } else {
-    println("エラー: シリアルポートが1つも見つかりません。USBケーブルの接続を確認してください。");
+  // 確定したポート番号 [2] を指定して初期化
+  if (Serial.list().length > 2) {
+    myPort = new Serial(this, "dev/cu.usbmodem34B7DA64C6082", 115200);
+    myPort.bufferUntil('\n');
   }
+  
+  for(int i=0; i<maxAmp.length; i++) maxAmp[i] = 0.15f;
+  
+  setTromboneWave();
+  textSize(24);
 }
 
 void setTromboneWave() {
@@ -127,35 +123,30 @@ void serialEvent(Serial p) {
   if (data != null) {
     data = trim(data);
     String[] values = split(data, ',');
-    if (values.length == 4) {
-      currentNote = values[0];
-      float noteDuration = float(values[1]); // ★追加: 音の長さを取得
-      currentBpm = int(values[2]);          // ★変更: インデックスを2に変更
-      int rawVelocity = int(values[3]);     // ★追加: 音の強さを取得
-      float velocity = rawVelocity / 100.0f * 0.15f; // ★追加: Minim用に音量を0.0〜0.15fに調整
+    
+    if (values.length == 2) {
+      try {
+        // 1. 周波数(Hz)とミリ秒を、それぞれ数値として読み込む
+        float freq = float(values[0]) / 2.0f; // 周波数を半分にして1オクターブ下げる
+        float durationMs = float(values[1]);
 
-      out.setTempo(currentBpm);
-      
-      if (!currentNote.equals("REST")) {
-        float beatSec = 60.0f / max(1, currentBpm);
-        float dsec = noteDuration * ToneLength * beatSec;
-        out.playNote(0, dsec, new HackInstrument(Frequency.ofPitch(currentNote).asHz() * 0.5f, velocity, currentWaveform));
-        // 表示用の更新
-        currentToneLengthSec = dsec;
-        currentToneLengthBeats = noteDuration * ToneLength;
-        lastNoteEndMillis = millis() + (long)(dsec * 1000);
+        // 2. 周波数が0（休符：REST）より大きいときだけ音を鳴らす
+        if (freq > 0) {
+          // 3. ミリ秒を1000で割って「秒」に変換する
+          float durationSec = durationMs / 1000.0f;
+
+          currentNote = freq + " Hz";
+          currentToneLengthSec = durationSec;
+          currentToneLengthBeats = durationMs / (60000.0f / currentBpm);
+          lastNoteEndMillis = millis() + (long)durationMs;
+        
+        // 4. HackInstrumentに直接周波数（freq）と秒数を渡す
+        out.playNote(0.0f, durationSec, new HackInstrument(freq, 0.15f, currentWaveform));
+        }
       }
+    catch (Exception e) {
+      // 例外が発生した場合は無視して続行
     }
-  }
-}
-
-void keyPressed() {
-  switch (key)
-  {
-    case '1': currentWaveform = Waves.SINE; break;
-    case '2': currentWaveform = Waves.TRIANGLE; break;
-    case '3': currentWaveform = Waves.SAW; break;
-    case '4': currentWaveform = Waves.SQUARE; break;
-    case '6': setTromboneWave(); break;
+    }
   }
 }
