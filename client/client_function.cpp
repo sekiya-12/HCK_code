@@ -31,6 +31,7 @@ bool Parse_data(uint8_t *Data, char Offset, WiFiUDP &Udp) {
       }
       return false; // フラグOFF
     }
+
   }
   return false;
 }
@@ -55,7 +56,7 @@ void BPM_update(uint8_t *CurrentBPM, bool Flag, uint8_t Data, float *ToneLength)
   }
 }
 
-void Performance(uint8_t Data, uint8_t *CurrentBar, uint8_t *NoteIndex, uint32_t *StartTime, uint16_t *Interval, float ToneLength, Pfm *Score) {
+void Performance(uint8_t Data, uint8_t *CurrentBar, uint8_t *NoteIndex, uint32_t *StartTime, uint16_t *Interval, float ToneLength, uint8_t CurrentBPM, Pfm *Score) {
   
   // 1. 新しい小節番号を受信した時のリセット処理
   // （Dataが40未満で、かつ現在演奏中の小節と異なる場合）
@@ -82,15 +83,20 @@ void Performance(uint8_t Data, uint8_t *CurrentBar, uint8_t *NoteIndex, uint32_t
       // 譜面配列から「音の高さ(pitch)」と「音の長さの割合(length)」を取得
       int pitch = Score[*CurrentBar].notes[*NoteIndex].pitch;
       float length = Score[*CurrentBar].notes[*NoteIndex].length;
+      uint8_t velocity = Score[*CurrentBar].notes[*NoteIndex].velocity;
       
       // 次の音までの間隔（Interval）を計算（ミリ秒）
       *Interval = ToneLength * length;
       
       // PC（Processing）へシリアル通信で送信
-      // 形式：「周波数,鳴らすミリ秒」 (例： 262,500)
+      // 形式：「周波数,鳴らすミリ秒,強さ,BPM」 (例： 262,500,100,120)
       Serial.print(pitch);
       Serial.print(",");
-      Serial.println(*Interval);
+      Serial.print(*Interval);
+      Serial.print(",");
+      Serial.print(velocity);
+      Serial.print(",");
+      Serial.println(CurrentBPM);
       
       *NoteIndex = *NoteIndex + 1; // 次の音符へ進む
     }

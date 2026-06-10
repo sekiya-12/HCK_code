@@ -1,6 +1,8 @@
 #include <WiFiS3.h>
 #include <WiFiUdp.h>
 #include "client_function.h"
+#include "EntertainmentRobot.h"
+
 
 //Offset変数とsetupScore関数を楽器に合わせて下さい．その他の，client_function.cpp，client_function.hはいじらなくても大丈夫です．
 
@@ -11,6 +13,8 @@ char pass[] = "hackathon003";
 uint16_t Port = 3000;    // サーバーと同じポート番号
 
 WiFiUDP Udp;
+
+EntertainmentRobot robot;
 
 // --- クライアントサイドのグローバル変数 ---
 char Offset = 0;         // 輪唱に必要なオフセット値（楽器ごとに設定，2番手だと-2）
@@ -44,58 +48,58 @@ Pfm Score[40];           // 楽譜（40小節分の配列）
 
 void setupScore() {
   // 第0小節〜第7小節（1周目）
-  Score[0] = {{ {NOTE_C4, 1.0}, {NOTE_D4, 1.0}, {NOTE_E4, 1.0}, {NOTE_F4, 1.0} }, 4};
-  Score[1] = {{ {NOTE_E4, 1.0}, {NOTE_D4, 1.0}, {NOTE_C4, 1.0}, {REST, 1.0} }, 4};
-  Score[2] = {{ {NOTE_E4, 1.0}, {NOTE_F4, 1.0}, {NOTE_G4, 1.0}, {NOTE_A4, 1.0} }, 4};
-  Score[3] = {{ {NOTE_G4, 1.0}, {NOTE_F4, 1.0}, {NOTE_E4, 1.0}, {REST, 1.0} }, 4};
-  Score[4] = {{ {NOTE_C4, 1.0}, {REST, 1.0}, {NOTE_C4, 1.0}, {REST, 1.0} }, 4};
-  Score[5] = {{ {NOTE_C4, 1.0}, {REST, 1.0}, {NOTE_C4, 1.0}, {REST, 1.0} }, 4};
-  Score[6] = {{ {NOTE_C4, 0.5}, {NOTE_C4, 0.5}, {NOTE_D4, 0.5}, {NOTE_D4, 0.5}, {NOTE_E4, 0.5}, {NOTE_E4, 0.5}, {NOTE_F4, 0.5}, {NOTE_F4, 0.5} }, 8};
-  Score[7] = {{ {NOTE_E4, 1.0}, {NOTE_D4, 1.0}, {NOTE_C4, 1.0}, {REST, 1.0} }, 4};
+  Score[0] = {{ {NOTE_C4, 1.0, 92}, {NOTE_D4, 1.0, 96}, {NOTE_E4, 1.0, 100}, {NOTE_F4, 1.0, 104} }, 4};
+  Score[1] = {{ {NOTE_E4, 1.0, 100}, {NOTE_D4, 1.0, 96}, {NOTE_C4, 1.0, 90}, {REST, 1.0, 0} }, 4};
+  Score[2] = {{ {NOTE_E4, 1.0, 96}, {NOTE_F4, 1.0, 100}, {NOTE_G4, 1.0, 106}, {NOTE_A4, 1.0, 112} }, 4};
+  Score[3] = {{ {NOTE_G4, 1.0, 106}, {NOTE_F4, 1.0, 100}, {NOTE_E4, 1.0, 94}, {REST, 1.0, 0} }, 4};
+  Score[4] = {{ {NOTE_C4, 1.0, 104}, {REST, 1.0, 0}, {NOTE_C4, 1.0, 104}, {REST, 1.0, 0} }, 4};
+  Score[5] = {{ {NOTE_C4, 1.0, 98}, {REST, 1.0, 0}, {NOTE_C4, 1.0, 106}, {REST, 1.0, 0} }, 4};
+  Score[6] = {{ {NOTE_C4, 0.5, 88}, {NOTE_C4, 0.5, 92}, {NOTE_D4, 0.5, 96}, {NOTE_D4, 0.5, 100}, {NOTE_E4, 0.5, 104}, {NOTE_E4, 0.5, 108}, {NOTE_F4, 0.5, 112}, {NOTE_F4, 0.5, 116} }, 8};
+  Score[7] = {{ {NOTE_E4, 1.0, 108}, {NOTE_D4, 1.0, 100}, {NOTE_C4, 1.0, 92}, {REST, 1.0, 0} }, 4};
 
   // 第8小節（休符）
-  Score[8] = {{ {REST, 4.0} }, 1};
+  Score[8] = {{ {REST, 4.0, 0} }, 1};
 
   // 第9小節〜第16小節（2周目：1オクターブ上）
-  Score[9]  = {{ {NOTE_C5, 1.0}, {NOTE_D5, 1.0}, {NOTE_E5, 1.0}, {NOTE_F5, 1.0} }, 4};
-  Score[10] = {{ {NOTE_E5, 1.0}, {NOTE_D5, 1.0}, {NOTE_C5, 1.0}, {REST, 1.0} }, 4};
-  Score[11] = {{ {NOTE_E5, 1.0}, {NOTE_F5, 1.0}, {NOTE_G5, 1.0}, {NOTE_A5, 1.0} }, 4};
-  Score[12] = {{ {NOTE_G5, 1.0}, {NOTE_F5, 1.0}, {NOTE_E5, 1.0}, {REST, 1.0} }, 4};
-  Score[13] = {{ {NOTE_C5, 1.0}, {REST, 1.0}, {NOTE_C5, 1.0}, {REST, 1.0} }, 4};
-  Score[14] = {{ {NOTE_C5, 1.0}, {REST, 1.0}, {NOTE_C5, 1.0}, {REST, 1.0} }, 4};
-  Score[15] = {{ {NOTE_C5, 0.5}, {NOTE_C5, 0.5}, {NOTE_D5, 0.5}, {NOTE_D5, 0.5}, {NOTE_E5, 0.5}, {NOTE_E5, 0.5}, {NOTE_F5, 0.5}, {NOTE_F5, 0.5} }, 8};
-  Score[16] = {{ {NOTE_E5, 1.0}, {NOTE_D5, 1.0}, {NOTE_C5, 1.0}, {REST, 1.0} }, 4};
+  Score[9]  = {{ {NOTE_C5, 1.0, 92}, {NOTE_D5, 1.0, 96}, {NOTE_E5, 1.0, 100}, {NOTE_F5, 1.0, 104} }, 4};
+  Score[10] = {{ {NOTE_E5, 1.0, 100}, {NOTE_D5, 1.0, 96}, {NOTE_C5, 1.0, 90}, {REST, 1.0, 0} }, 4};
+  Score[11] = {{ {NOTE_E5, 1.0, 96}, {NOTE_F5, 1.0, 100}, {NOTE_G5, 1.0, 106}, {NOTE_A5, 1.0, 112} }, 4};
+  Score[12] = {{ {NOTE_G5, 1.0, 106}, {NOTE_F5, 1.0, 100}, {NOTE_E5, 1.0, 94}, {REST, 1.0, 0} }, 4};
+  Score[13] = {{ {NOTE_C5, 1.0, 104}, {REST, 1.0, 0}, {NOTE_C5, 1.0, 104}, {REST, 1.0, 0} }, 4};
+  Score[14] = {{ {NOTE_C5, 1.0, 98}, {REST, 1.0, 0}, {NOTE_C5, 1.0, 106}, {REST, 1.0, 0} }, 4};
+  Score[15] = {{ {NOTE_C5, 0.5, 88}, {NOTE_C5, 0.5, 92}, {NOTE_D5, 0.5, 96}, {NOTE_D5, 0.5, 100}, {NOTE_E5, 0.5, 104}, {NOTE_E5, 0.5, 108}, {NOTE_F5, 0.5, 112}, {NOTE_F5, 0.5, 116} }, 8};
+  Score[16] = {{ {NOTE_E5, 1.0, 108}, {NOTE_D5, 1.0, 100}, {NOTE_C5, 1.0, 92}, {REST, 1.0, 0} }, 4};
 
   // 第17小節〜第18小節（休符）
-  Score[17] = {{ {REST, 4.0} }, 1};
-  Score[18] = {{ {REST, 4.0} }, 1};
+  Score[17] = {{ {REST, 4.0, 0} }, 1};
+  Score[18] = {{ {REST, 4.0, 0} }, 1};
 
   // 第19小節〜第26小節（3周目：通常）
-  Score[19] = {{ {NOTE_C4, 1.0}, {NOTE_D4, 1.0}, {NOTE_E4, 1.0}, {NOTE_F4, 1.0} }, 4};
-  Score[20] = {{ {NOTE_E4, 1.0}, {NOTE_D4, 1.0}, {NOTE_C4, 1.0}, {REST, 1.0} }, 4};
-  Score[21] = {{ {NOTE_E4, 1.0}, {NOTE_F4, 1.0}, {NOTE_G4, 1.0}, {NOTE_A4, 1.0} }, 4};
-  Score[22] = {{ {NOTE_G4, 1.0}, {NOTE_F4, 1.0}, {NOTE_E4, 1.0}, {REST, 1.0} }, 4};
-  Score[23] = {{ {NOTE_C4, 1.0}, {REST, 1.0}, {NOTE_C4, 1.0}, {REST, 1.0} }, 4};
-  Score[24] = {{ {NOTE_C4, 1.0}, {REST, 1.0}, {NOTE_C4, 1.0}, {REST, 1.0} }, 4};
-  Score[25] = {{ {NOTE_C4, 0.5}, {NOTE_C4, 0.5}, {NOTE_D4, 0.5}, {NOTE_D4, 0.5}, {NOTE_E4, 0.5}, {NOTE_E4, 0.5}, {NOTE_F4, 0.5}, {NOTE_F4, 0.5} }, 8};
-  Score[26] = {{ {NOTE_E4, 1.0}, {NOTE_D4, 1.0}, {NOTE_C4, 1.0}, {REST, 1.0} }, 4};
+  Score[19] = {{ {NOTE_C4, 1.0, 92}, {NOTE_D4, 1.0, 96}, {NOTE_E4, 1.0, 100}, {NOTE_F4, 1.0, 104} }, 4};
+  Score[20] = {{ {NOTE_E4, 1.0, 100}, {NOTE_D4, 1.0, 96}, {NOTE_C4, 1.0, 90}, {REST, 1.0, 0} }, 4};
+  Score[21] = {{ {NOTE_E4, 1.0, 96}, {NOTE_F4, 1.0, 100}, {NOTE_G4, 1.0, 106}, {NOTE_A4, 1.0, 112} }, 4};
+  Score[22] = {{ {NOTE_G4, 1.0, 106}, {NOTE_F4, 1.0, 100}, {NOTE_E4, 1.0, 94}, {REST, 1.0, 0} }, 4};
+  Score[23] = {{ {NOTE_C4, 1.0, 104}, {REST, 1.0, 0}, {NOTE_C4, 1.0, 104}, {REST, 1.0, 0} }, 4};
+  Score[24] = {{ {NOTE_C4, 1.0, 98}, {REST, 1.0, 0}, {NOTE_C4, 1.0, 106}, {REST, 1.0, 0} }, 4};
+  Score[25] = {{ {NOTE_C4, 0.5, 88}, {NOTE_C4, 0.5, 92}, {NOTE_D4, 0.5, 96}, {NOTE_D4, 0.5, 100}, {NOTE_E4, 0.5, 104}, {NOTE_E4, 0.5, 108}, {NOTE_F4, 0.5, 112}, {NOTE_F4, 0.5, 116} }, 8};
+  Score[26] = {{ {NOTE_E4, 1.0, 108}, {NOTE_D4, 1.0, 100}, {NOTE_C4, 1.0, 92}, {REST, 1.0, 0} }, 4};
 
   // 第27小節（休符）
-  Score[27] = {{ {REST, 4.0} }, 1};
+  Score[27] = {{ {REST, 4.0, 0} }, 1};
 
   // 第28小節〜第35小節（4周目：1オクターブ上）
-  Score[28] = {{ {NOTE_C5, 1.0}, {NOTE_D5, 1.0}, {NOTE_E5, 1.0}, {NOTE_F5, 1.0} }, 4};
-  Score[29] = {{ {NOTE_E5, 1.0}, {NOTE_D5, 1.0}, {NOTE_C5, 1.0}, {REST, 1.0} }, 4};
-  Score[30] = {{ {NOTE_E5, 1.0}, {NOTE_F5, 1.0}, {NOTE_G5, 1.0}, {NOTE_A5, 1.0} }, 4};
-  Score[31] = {{ {NOTE_G5, 1.0}, {NOTE_F5, 1.0}, {NOTE_E5, 1.0}, {REST, 1.0} }, 4};
-  Score[32] = {{ {NOTE_C5, 1.0}, {REST, 1.0}, {NOTE_C5, 1.0}, {REST, 1.0} }, 4};
-  Score[33] = {{ {NOTE_C5, 1.0}, {REST, 1.0}, {NOTE_C5, 1.0}, {REST, 1.0} }, 4};
-  Score[34] = {{ {NOTE_C5, 0.5}, {NOTE_C5, 0.5}, {NOTE_D5, 0.5}, {NOTE_D5, 0.5}, {NOTE_E5, 0.5}, {NOTE_E5, 0.5}, {NOTE_F5, 0.5}, {NOTE_F5, 0.5} }, 8};
-  Score[35] = {{ {NOTE_E5, 1.0}, {NOTE_D5, 1.0}, {NOTE_C5, 1.0}, {REST, 1.0} }, 4};
+  Score[28] = {{ {NOTE_C5, 1.0, 92}, {NOTE_D5, 1.0, 96}, {NOTE_E5, 1.0, 100}, {NOTE_F5, 1.0, 104} }, 4};
+  Score[29] = {{ {NOTE_E5, 1.0, 100}, {NOTE_D5, 1.0, 96}, {NOTE_C5, 1.0, 90}, {REST, 1.0, 0} }, 4};
+  Score[30] = {{ {NOTE_E5, 1.0, 96}, {NOTE_F5, 1.0, 100}, {NOTE_G5, 1.0, 106}, {NOTE_A5, 1.0, 112} }, 4};
+  Score[31] = {{ {NOTE_G5, 1.0, 106}, {NOTE_F5, 1.0, 100}, {NOTE_E5, 1.0, 94}, {REST, 1.0, 0} }, 4};
+  Score[32] = {{ {NOTE_C5, 1.0, 104}, {REST, 1.0, 0}, {NOTE_C5, 1.0, 104}, {REST, 1.0, 0} }, 4};
+  Score[33] = {{ {NOTE_C5, 1.0, 98}, {REST, 1.0, 0}, {NOTE_C5, 1.0, 106}, {REST, 1.0, 0} }, 4};
+  Score[34] = {{ {NOTE_C5, 0.5, 88}, {NOTE_C5, 0.5, 92}, {NOTE_D5, 0.5, 96}, {NOTE_D5, 0.5, 100}, {NOTE_E5, 0.5, 104}, {NOTE_E5, 0.5, 108}, {NOTE_F5, 0.5, 112}, {NOTE_F5, 0.5, 116} }, 8};
+  Score[35] = {{ {NOTE_E5, 1.0, 108}, {NOTE_D5, 1.0, 100}, {NOTE_C5, 1.0, 92}, {REST, 1.0, 0} }, 4};
 
   // 第36小節〜第39小節（終了・全休符）
   for (int i = 36; i < 40; i++) {
-    Score[i] = {{ {REST, 4.0} }, 1};
+    Score[i] = {{ {REST, 4.0, 0} }, 1};
   }
 }
 
@@ -124,15 +128,16 @@ void setup() {
   setupScore();
   ToneLength = 60000.0 / CurrentBPM;
   Serial.println("クライアント：譜面データの読み込みが完了しました．");
+  robot.begin(ssid, pass, Port);
 }
 
 void loop() {
-  // 1. 受信パケットの仕分けと小節番号のオフセット適用
   Flag = Parse_data(&Data, Offset, Udp);
   
   // 2. データがBPMだった場合の同期処理
   BPM_update(&CurrentBPM, Flag, Data, &ToneLength);
 
   // 3. 演奏位置制御とPCへのデータ送信（今回追加）
-  Performance(Data, &CurrentBar, &NoteIndex, &StartTime, &Interval, ToneLength, Score);
+  Performance(Data, &CurrentBar, &NoteIndex, &StartTime, &Interval, ToneLength, CurrentBPM, Score);
+  robot.update();
 }
