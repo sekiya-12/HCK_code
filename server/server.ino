@@ -6,7 +6,7 @@
 // 【ネットワーク設定】
 char ssid[] = "hackathon003-WPA2";
 char pass[] = "hackathon003";
-/IPAddress BCaddress(255, 255, 255, 255); // 全員に一斉送信（ブロードキャスト）
+IPAddress BCaddress(255, 255, 255, 255); // 全員に一斉送信（ブロードキャスト）
 
 uint16_t Port = 3000;
 WiFiUDP udp;
