@@ -9,7 +9,7 @@ Waveform currentWaveform;
 
 // --- 表示用変数 ---
 String currentNote = "REST";
-int currentBpm = 120;
+int currentBpm = -1; // 初期値は未設定にして外部から読み込む
 String currentDurationName = "REST";
 
 // 基準音符長（デフォルト: 1.0 = 1拍単位）
@@ -28,7 +28,7 @@ class HackInstrument implements Instrument
   MoogFilter bpFilter; 
   Delay reverb;
 
-  WoodPercussion(float resonanceFreq, float amplitude)
+  HackInstrument(float resonanceFreq, float amplitude)
   {
     noise = new Noise(amplitude, Noise.Tint.PINK);
     ampEnv = new ADSR(1.0f, 0.002f, 0.05f, 0.0f, 0.01f);
@@ -123,7 +123,7 @@ void serialEvent(Serial p) {
           lastNoteEndMillis = millis() + (long)durationMs;
         
           // 3. カスタネット特性を持たせたインストゥルメントオブジェクトを生成して再生
-          out.playNote(0.0f, 0.8f, new WoodPercussion(freq, 1.0f));
+          out.playNote(0.0f, 0.8f, new HackInstrument(freq, 1.0f));
         }
       }
       catch (Exception e) {
