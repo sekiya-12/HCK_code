@@ -63,6 +63,28 @@ const int MOUTH_CLOSE_ANGLE = 90;
 const int MOUTH_OPEN_ANGLE  = 60;
 
 // =====================
+// 全休符・オフセット設定
+// =====================
+// サーバーから送られる小節番号は 0〜39 でループする想定
+const uint8_t SERVER_BAR_COUNT = 40;
+
+// サーバーの小節番号と，このエンタメ担当の譜面上の小節番号がずれる場合に使う
+// scoreBar = serverBar + PART_BAR_OFFSET として扱う
+// 例：サーバー0のとき譜面2小節目として見たい場合は 2
+// 例：サーバー2のとき譜面0小節目として見たい場合は -2
+const int PART_BAR_OFFSET = 0;
+
+// true にした小節は「全休符」として扱い，サーボを動かさない
+// 左から譜面上の 0, 1, 2, ... , 39 小節目に対応
+// 例：0〜3小節目を全休符にするなら，先頭4つを true にする
+const bool WHOLE_REST_BAR_TABLE[SERVER_BAR_COUNT] = {
+  false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false
+};
+
+// =====================
 // BPM・小節管理
 // =====================
 uint8_t currentBPM = 120;
@@ -77,6 +99,7 @@ const int BEATS_PER_BAR = 4;
 
 bool barActive = false;
 bool armDirection = false;
+bool motionMutedByWholeRest = false;
 
 // =====================
 // サーボを戻すための管理
@@ -105,6 +128,8 @@ void setupServos();
 void receiveUdpData();
 void updateBPM(uint8_t newBPM);
 void calculateBeatInterval();
+uint8_t toScoreBar(uint8_t serverBarNumber);
+bool isWholeRestBar(uint8_t scoreBarNumber);
 void startBarMotion(uint8_t barNumber);
 void updateNormalMotion();
 void triggerBeatMotion(int beat);
@@ -114,6 +139,8 @@ void triggerRightArmPulse(int angle, unsigned long pulseTime);
 void triggerLeftArmPulse(int angle, unsigned long pulseTime);
 void triggerExtraPulse(int angle, unsigned long pulseTime);
 void updateServoReturn();
+void stopAllMotionForWholeRest();
+void cancelServoReturns();
 void resetMainServos();
 void resetEmotionServo();
 
@@ -200,7 +227,7 @@ void receiveUdpData() {
       return;
     }
 
-    if (data >= 40) {
+    if (data >= SERVER_BAR_COUNT) {
       updateBPM((uint8_t)data);
     } else {
       startBarMotion((uint8_t)data);
@@ -233,17 +260,60 @@ void calculateBeatInterval() {
 }
 
 // =====================
+// サーバー小節番号を譜面上の小節番号へ変換
+// サーバーを切らない限り 0〜39 がループするので，
+// オフセットを足した後に 0〜39 へ戻す
+// =====================
+uint8_t toScoreBar(uint8_t serverBarNumber) {
+  int scoreBar = (int)serverBarNumber + PART_BAR_OFFSET;
+  scoreBar %= SERVER_BAR_COUNT;
+
+  if (scoreBar < 0) {
+    scoreBar += SERVER_BAR_COUNT;
+  }
+
+  return (uint8_t)scoreBar;
+}
+
+// =====================
+// 全休符小節かどうか
+// =====================
+bool isWholeRestBar(uint8_t scoreBarNumber) {
+  if (scoreBarNumber >= SERVER_BAR_COUNT) {
+    return false;
+  }
+
+  return WHOLE_REST_BAR_TABLE[scoreBarNumber];
+}
+
+// =====================
 // 小節番号を受信したとき
 // =====================
 void startBarMotion(uint8_t barNumber) {
-  currentBar = barNumber;
+  uint8_t scoreBar = toScoreBar(barNumber);
+  currentBar = scoreBar;
+
+  Serial.print("Server bar received: ");
+  Serial.print(barNumber);
+  Serial.print("  Score bar: ");
+  Serial.println(currentBar);
+
+  if (isWholeRestBar(currentBar)) {
+    motionMutedByWholeRest = true;
+    stopAllMotionForWholeRest();
+
+    Serial.println("Whole rest bar: servo motion skipped");
+    return;
+  }
+
+  motionMutedByWholeRest = false;
 
   barStartTime = millis();
   nextBeatTime = barStartTime;
   beatInBar = 0;
   barActive = true;
 
-  Serial.print("Bar received: ");
+  Serial.print("Bar motion started: ");
   Serial.println(currentBar);
 }
 
@@ -253,6 +323,10 @@ void startBarMotion(uint8_t barNumber) {
 // 1小節の中の4拍はエンタメArduino側で刻む
 // =====================
 void updateNormalMotion() {
+  if (motionMutedByWholeRest) {
+    return;
+  }
+
   if (!barActive) {
     return;
   }
@@ -325,6 +399,10 @@ void triggerBeatMotion(int beat) {
 // BPM変更時の演出開始
 // =====================
 void startEmotion() {
+  if (motionMutedByWholeRest) {
+    return;
+  }
+
 #if INSTRUMENT == VIOLIN || INSTRUMENT == CASTANET
   emotionActive = true;
   emotionStartTime = millis();
@@ -340,6 +418,12 @@ void startEmotion() {
 // カスタネット：口開閉
 // =====================
 void updateEmotionMotion() {
+  if (motionMutedByWholeRest) {
+    resetEmotionServo();
+    emotionActive = false;
+    return;
+  }
+
   if (!emotionActive) {
     return;
   }
@@ -427,6 +511,29 @@ void updateServoReturn() {
     resetEmotionServo();
     extraReturnActive = false;
   }
+}
+
+// =====================
+// 全休符時にすべての動作を止める
+// =====================
+void stopAllMotionForWholeRest() {
+  barActive = false;
+  beatInBar = 0;
+
+  emotionActive = false;
+  cancelServoReturns();
+
+  resetMainServos();
+  resetEmotionServo();
+}
+
+// =====================
+// delayなし戻し処理の予約を取り消す
+// =====================
+void cancelServoReturns() {
+  rightArmReturnActive = false;
+  leftArmReturnActive = false;
+  extraReturnActive = false;
 }
 
 // =====================
