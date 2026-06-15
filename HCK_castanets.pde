@@ -21,33 +21,51 @@ float currentToneLengthSec = 0.0f;   // 現在鳴っている音の秒数
 float currentToneLengthBeats = 0.0f; // 現在鳴っている音の拍数
 
 // --- カスタネットの特性を反映したクラス ---
-class HackInstrument implements Instrument
+// --- カスタネット：Arduino連動 ＆ ユーザー微調整反映版 ---
+class WoodPercussion implements Instrument
 {
-  Noise noise;
-  ADSR ampEnv;
-  MoogFilter bpFilter; 
-  Delay reverb;
+  // 1. 表面の硬い音（アタック成分）
+  Noise clickNoise;
+  ADSR clickEnv;
+  MoogFilter clickFilter; 
 
-  HackInstrument(float resonanceFreq, float amplitude)
+  // 2. 木の内部の響き（ボディ成分）
+  Noise bodyNoise;
+  ADSR bodyEnv;
+  MoogFilter bodyFilter; 
+
+  WoodPercussion(float inputFreq, float amplitude)
   {
-    noise = new Noise(amplitude, Noise.Tint.PINK);
-    ampEnv = new ADSR(1.0f, 0.002f, 0.05f, 0.0f, 0.01f);
-    bpFilter = new MoogFilter(resonanceFreq, 0.6f, MoogFilter.Type.BP);
-    reverb = new Delay(0.02f, 0.4f, true, true);
+    // ①【表面の硬い音】
+    clickNoise = new Noise(amplitude, Noise.Tint.WHITE);
+    clickEnv = new ADSR(1.0f, 0.001f, 0.01f, 0.0f, 0.01f);
+    // 元の「3300(アタック)と1800(ボディ)」の差分である 1500Hz を足して関係性をキープ
+    clickFilter = new MoogFilter(inputFreq + 1500.0f, 0.4f, MoogFilter.Type.BP);
+    clickNoise.patch(clickEnv).patch(clickFilter);
+
+    // ②【木材の響き】
+    bodyNoise = new Noise(amplitude * 0.7f, Noise.Tint.PINK);
     
-    noise.patch(ampEnv).patch(bpFilter).patch(reverb);
+    bodyEnv = new ADSR(1.0f, 0.001f, 0.22f, 0.0f, 0.01f);
+    // Arduinoから送られてきたHz（inputFreq）をそのままボディの鳴りとして適用
+    bodyFilter = new MoogFilter(inputFreq, 0.7f, MoogFilter.Type.BP);
+    bodyNoise.patch(bodyEnv).patch(bodyFilter);
   }
 
   void noteOn(float duration)
   {
-    ampEnv.noteOn();   
-    reverb.patch(out); 
+    clickEnv.noteOn();   
+    bodyEnv.noteOn();   
+    clickFilter.patch(out); 
+    bodyFilter.patch(out); 
   }
 
   void noteOff()
   {
-    ampEnv.noteOff();  
-    reverb.unpatch(out); 
+    clickEnv.noteOff();  
+    bodyEnv.noteOff();  
+    clickFilter.unpatch(out); 
+    bodyFilter.unpatch(out); 
   }
 }
 
