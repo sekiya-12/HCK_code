@@ -141,7 +141,7 @@ void serialEvent(Serial p) {
           lastNoteEndMillis = millis() + (long)durationMs;
         
           // 3. カスタネット特性を持たせたインストゥルメントオブジェクトを生成して再生
-          out.playNote(0.0f, 0.8f, new HackInstrument(freq, 1.0f));
+          out.playNote(0.0f, 0.8f, new WoodPercussion(freq, 1.0f));
         }
       }
       catch (Exception e) {
