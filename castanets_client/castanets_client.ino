@@ -5,8 +5,8 @@
 // Offset変数とsetupScore関数を楽器に合わせて下さい．その他の，client_function.cpp，client_function.hはいじらなくても大丈夫です．
 
 // --- ネットワーク設定 ---
-char ssid[] = "xg100n-430175-1"; //hackathon003-WPA2
-char pass[] = "54abbe1550e21"; //hackathon003
+char ssid[] = "hackathon003-WPA2"; 
+char pass[] = "hackathon003"; 
 uint16_t Port = 3000; // サーバーと同じポート番号
 
 WiFiUDP Udp;
