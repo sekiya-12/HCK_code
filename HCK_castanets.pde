@@ -32,40 +32,59 @@ class WoodPercussion implements Instrument
   // 2. 木の内部の響き（ボディ成分）
   Noise bodyNoise;
   ADSR bodyEnv;
-  MoogFilter bodyFilter; 
+  MoogFilter bodyFilter;
+
+  // 3. 高域の乾いた成分（理想に近い参考版に合わせて追加）
+  Noise dryNoise;
+  ADSR dryEnv;
+  MoogFilter dryFilter;
 
   WoodPercussion(float inputFreq, float amplitude)
   {
-    // ①【表面の硬い音】
-    clickNoise = new Noise(amplitude, Noise.Tint.WHITE);
-    clickEnv = new ADSR(1.0f, 0.001f, 0.01f, 0.0f, 0.01f);
-    // 元の「3300(アタック)と1800(ボディ)」の差分である 1500Hz を足して関係性をキープ
-    clickFilter = new MoogFilter(inputFreq + 1500.0f, 0.4f, MoogFilter.Type.BP);
+    // 参考版の音作り：周波数を木の共鳴帯域に寄せ、毎回わずかに揺らす
+    float bodyFreq = constrain(inputFreq, 1000.0f, 2600.0f);
+    bodyFreq += random(-90.0f, 90.0f);
+    float clickFreq = bodyFreq + random(2500.0f, 3600.0f);
+    float dryFreq = bodyFreq + random(4200.0f, 5200.0f);
+    float ampRand = amplitude * random(0.80f, 1.05f);
+
+    // ①【表面の硬い音】カチッという入りを残す
+    clickNoise = new Noise(ampRand * 1.15f, Noise.Tint.WHITE);
+    clickEnv = new ADSR(1.0f, 0.0005f, 0.007f, 0.0f, 0.003f);
+    clickFilter = new MoogFilter(clickFreq, 0.65f, MoogFilter.Type.BP);
     clickNoise.patch(clickEnv).patch(clickFilter);
 
-    // ②【木材の響き】
-    bodyNoise = new Noise(amplitude * 0.7f, Noise.Tint.PINK);
-    
-    bodyEnv = new ADSR(1.0f, 0.001f, 0.22f, 0.0f, 0.01f);
-    // Arduinoから送られてきたHz（inputFreq）をそのままボディの鳴りとして適用
-    bodyFilter = new MoogFilter(inputFreq, 0.7f, MoogFilter.Type.BP);
+    // ②【木の胴鳴り成分】「カッ」だけでなく「コッ」と響く感じを足す
+    bodyNoise = new Noise(ampRand * 0.40f, Noise.Tint.PINK);
+    bodyEnv = new ADSR(1.0f, 0.001f, 0.060f, 0.0f, 0.012f);
+    bodyFilter = new MoogFilter(bodyFreq, 0.85f, MoogFilter.Type.BP);
     bodyNoise.patch(bodyEnv).patch(bodyFilter);
+
+    // ③【高域のパキッとした成分】硬さを残しつつ余韻を作る
+    dryNoise = new Noise(ampRand * 0.33f, Noise.Tint.WHITE);
+    dryEnv = new ADSR(1.0f, 0.0005f, 0.018f, 0.0f, 0.006f);
+    dryFilter = new MoogFilter(dryFreq, 0.55f, MoogFilter.Type.BP);
+    dryNoise.patch(dryEnv).patch(dryFilter);
   }
 
   void noteOn(float duration)
   {
-    clickEnv.noteOn();   
-    bodyEnv.noteOn();   
-    clickFilter.patch(out); 
-    bodyFilter.patch(out); 
+    clickEnv.noteOn();
+    bodyEnv.noteOn();
+    dryEnv.noteOn();
+    clickFilter.patch(out);
+    bodyFilter.patch(out);
+    dryFilter.patch(out);
   }
 
   void noteOff()
   {
-    clickEnv.noteOff();  
-    bodyEnv.noteOff();  
-    clickFilter.unpatch(out); 
-    bodyFilter.unpatch(out); 
+    clickEnv.noteOff();
+    bodyEnv.noteOff();
+    dryEnv.noteOff();
+    clickFilter.unpatch(out);
+    bodyFilter.unpatch(out);
+    dryFilter.unpatch(out);
   }
 }
 
@@ -108,7 +127,6 @@ void draw() {
   // リアルタイム演奏情報の表示
   textSize(18);
   text("Note: " + currentNote, 240, 160);         // 発音中の周波数
-  text("BPM: " + currentBpm, 245, 200);           // 現在のテンポ
   
   // リアルタイムの打音長表示（拍数と秒数）
   String lenStr = "REST";
