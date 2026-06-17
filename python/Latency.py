@@ -3,7 +3,7 @@ import serial
 import csv
 import time
 
-PORT = "/dev/cu.usbmodemF412FA629DF02" #/dev/cu.usbmodemXXX
+PORT = "/dev/cu.usbmodem4827E2E01BF02" #/dev/cu.usbmodemXXX
 BAUD = 115200
 OUTPUT = "Latency.csv"
 header = ["Server", "Client", "Latency"]
@@ -24,6 +24,7 @@ with open(OUTPUT, "w", newline='') as file:
             row = line.split(",")
             writer.writerow(row)
             file.flush()
+            print(row)
     except KeyboardInterrupt:
         print(f"シリアル出力の読み取りを終了し，データを{OUTPUT}に出力しました．")
     finally:
