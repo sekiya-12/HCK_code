@@ -5,8 +5,8 @@
 // Offset変数とsetupScore関数を楽器に合わせて下さい．その他の，client_function.cpp，client_function.hはいじらなくても大丈夫です．
 
 // --- ネットワーク設定 ---
-char ssid[] = "hackathon003-WPA2"; 
-char pass[] = "hackathon003"; 
+char ssid[] = "hackathon003-WPA2"; //
+char pass[] = "hackathon003"; //
 uint16_t Port = 3000; // サーバーと同じポート番号
 
 WiFiUDP Udp;
@@ -31,54 +31,54 @@ constexpr int kRest = 0;
 void setupScore()
 {
   // 第0小節〜第7小節（1周目）
-  Score[0] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[1] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[2] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[3] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[4] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[5] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[6] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[7] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
+  Score[0] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[1] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[2] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[3] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[4] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[5] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[6] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[7] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
 
   // 第8小節（休符）
-  Score[8] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
+  Score[8] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
 
   // 第9小節〜第16小節（2周目：1オクターブ上）
-  Score[9] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[10] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[11] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[12] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[13] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[14] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[15] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[16] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
+  Score[9] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[10] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[11] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[12] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[13] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[14] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[15] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[16] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
 
   // 第17小節〜第18小節（休符）
-  Score[17] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[18] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
+  Score[17] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[18] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
 
   // 第19小節〜第26小節（3周目：通常）
-  Score[19] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[20] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[21] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[22] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[23] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[24] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[25] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[26] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
+  Score[19] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[20] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[21] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[22] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[23] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[24] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[25] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[26] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
 
   // 第27小節（休符）
-  Score[27] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
+  Score[27] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
 
   // 第28小節〜第35小節（4周目：1オクターブ上）
-  Score[28] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[29] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[30] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[31] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[32] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[33] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[34] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
-  Score[35] = {{{kFreqValue, 0.2f}, {kRest, 0.2f}, {kFreqValue, 0.2f}, {kRest, 0.2f}}, 4};
+  Score[28] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[29] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[30] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[31] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[32] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[33] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[34] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
+  Score[35] = {{{kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}, {kFreqValue, 0.2f}, {kRest, 0.8f}, {kRest, 1.0f}}, 8};
 
   // 第36小節〜第39小節（終了・全休符）
   for (int i = 36; i < 40; i++)
@@ -86,6 +86,7 @@ void setupScore()
     Score[i] = {{{kRest, 4.0f}}, 1};
   }
 }
+
 
 void setup()
 {
