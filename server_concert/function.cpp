@@ -206,7 +206,7 @@ void Stage_control(uint16_t Interval, IPAddress BCaddress, uint16_t Port, WiFiUD
 
     // === 演奏中（Intervalごとに次の小節を送信）===
     case STAGE_PLAYING:
-      if (now - barTime >= Interval) {  // BPM変更があれば次の小節から反映される
+      if (now - barTime >= Interval) {
         barTime = now;
         step++;
 
