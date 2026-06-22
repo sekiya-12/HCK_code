@@ -13,6 +13,11 @@
 // サーバーからのUDP 1Byteを受信する
 // 0〜39     → 小節番号
 // 40〜255  → BPM
+//
+// 今回追加した機能
+// ・受信したBPMから四分音符，八分音符，休符などの時間を計算する
+// ・SCORE_TABLEに書いた楽譜データ通りにサーボを動かす
+// ・休符の部分ではサーボを動かさない
 // ==================================================
 
 // =====================
@@ -24,10 +29,10 @@
 #define CASTANET   4
 
 // 使う人形に合わせてここだけ変更
+// 例：ピアノなら PIANO，トロンボーンなら TROMBONE
+#ifndef INSTRUMENT
 #define INSTRUMENT PIANO
-// #define INSTRUMENT TROMBONE
-// #define INSTRUMENT VIOLIN
-// #define INSTRUMENT CASTANET
+#endif
 
 void entameSetup();
 void entameLoop();
