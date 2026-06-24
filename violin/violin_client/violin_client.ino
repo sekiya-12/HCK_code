@@ -69,8 +69,8 @@ const int MOUTH_CLOSE_ANGLE = 90;  // 口を閉じる
 const int MOUTH_OPEN_ANGLE  = 60;  // 口を開く
 
 // 動きの速さ（msを大きくするとゆっくり）
-unsigned long BOW_MOVE_INTERVAL   = 550;  // 弓を反転する間隔(ms)
-unsigned long MOUTH_MOVE_INTERVAL = 400;  // 口を開閉する間隔(ms)
+unsigned long BOW_MOVE_INTERVAL   = 550;  // 弓を反転する間隔(ms)＠BPM120基準。BPMに連動して伸縮
+unsigned long MOUTH_MOVE_INTERVAL = 400;  // 口を開閉する間隔(ms)＠BPM120基準。BPMに連動して伸縮
 
 // 動き管理
 bool soundActive = false;
@@ -174,15 +174,22 @@ bool isSounding() {
   return Score[CurrentBar].notes[idx].freq > 0;
 }
 
-// 弓と口：音が出ている間だけ、一定間隔で動かし続ける
+// 弓と口：音が出ている間だけ動かし続ける（間隔はBPMに連動して伸縮）
 void updateMovement(unsigned long now) {
+  // BPM120(ToneLength=500)を基準に、テンポが速いほど間隔を短く＝動きも速く
+  float tempoScale = ToneLength / 500.0;
+  unsigned long bowInt   = (unsigned long)(BOW_MOVE_INTERVAL   * tempoScale);
+  unsigned long mouthInt = (unsigned long)(MOUTH_MOVE_INTERVAL * tempoScale);
+  if (bowInt   < 30) bowInt   = 30;   // 速すぎ防止の下限
+  if (mouthInt < 30) mouthInt = 30;
+
   if (soundActive) {
-    if (now - lastBowMove >= BOW_MOVE_INTERVAL) {
+    if (now - lastBowMove >= bowInt) {
       lastBowMove = now;
       bowDirection = !bowDirection;
       bowServo.write(bowDirection ? BOW_LEFT_ANGLE : BOW_RIGHT_ANGLE);
     }
-    if (now - lastMouthMove >= MOUTH_MOVE_INTERVAL) {
+    if (now - lastMouthMove >= mouthInt) {
       lastMouthMove = now;
       mouthDirection = !mouthDirection;
       mouthServo.write(mouthDirection ? MOUTH_OPEN_ANGLE : MOUTH_CLOSE_ANGLE);

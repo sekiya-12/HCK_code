@@ -3,15 +3,12 @@
 // ==================================================
 // ヴァイオリン人形：単体統合テスト版（Wi-Fi・サーバー不要）
 //
-// 1ファイルで「ロボットの動き」と「音(Processingへ送信)」を両方テストする。
-//   ・仮想サーバー … 小節番号を自動で 0→39 と進める（Wi-Fiの代わり）
-//   ・音           … 各音符を「freq,ms,弾き方」でProcessingへ送信
-//   ・動き(1基目 D9) … 弓を一定間隔で反転（弓引き）
-//   ・動き(2基目 D5) … 口を一定間隔で開閉（歌唱演出）
+// 動きの作り方は testtest.ino と同様：
+//   ・弓(1基目 D9) … 音符ごとに反転（拍に正確）。休符では待機位置へ
+//   ・口(2基目 D5) … BPMが変わったときに開閉する（歌唱演出 emotion）
+// さらに testtest と同様、BPM を自動で 120 ↔ 160 に切り替えて確認する。
 //
-// ★動きは「音が出ている音符(freq>0)の間だけ」連続して動き、
-//   休符(freq=0)になった瞬間に止まる。音と動きがズレない。
-//
+// 音(Processing) … 各音符を「freq,ms,弾き方」で送信（freq=0 は休符＝無音）。
 // ※ Processingで音も確認する場合は、シリアル速度を 115200 に合わせること。
 // ==================================================
 
@@ -46,21 +43,17 @@ const int BOW_PIN   = 9;
 const int MOUTH_PIN = 5;
 
 // ---------- 角度（実機に合わせて調整） ----------
-const int ARM_REST_ANGLE   = 80;   // 弓の待機位置
-const int BOW_LEFT_ANGLE    = 75;  // 下げ弓側
-const int BOW_RIGHT_ANGLE   = 90; // 上げ弓側
-const int MOUTH_CLOSE_ANGLE = 90;  // 口を閉じる
-const int MOUTH_OPEN_ANGLE  = 60;  // 口を開く
-
-// ---------- ★動きの速さ（msを大きくするとゆっくりになる） ----------
-// 音が出ている間、この間隔で弓を反転・口を開閉する
-unsigned long BOW_MOVE_INTERVAL   = 550;  // 弓を反転する間隔(ms)
-unsigned long MOUTH_MOVE_INTERVAL = 400;  // 口を開閉する間隔(ms)
+const int ARM_REST_ANGLE    = 80;  // 弓の待機位置
+const int BOW_LEFT_ANGLE     = 75;  // 下げ弓側
+const int BOW_RIGHT_ANGLE    = 90;  // 上げ弓側
+const int MOUTH_CLOSE_ANGLE  = 90;  // 口を閉じる
+const int MOUTH_OPEN_ANGLE   = 60;  // 口を開く
 
 // ---------- テンポ・小節管理 ----------
 char Offset = 0;            // テストは0で即スタート（本番のviolin_clientは -4）
 uint8_t currentBPM = 120;
-float   ToneLength = 500.0; // 4分音符=1拍の長さ(ms) = 60000/BPM
+float   ToneLength = 500.0;  // 4分音符=1拍の長さ(ms) = 60000/BPM
+unsigned long beatInterval = 500; // = ToneLength（口の演出タイミング用）
 const int BEATS_PER_BAR = 4;
 
 // 仮想サーバー
@@ -73,34 +66,31 @@ int NoteIndex = 0;
 unsigned long noteStartTime = 0;
 unsigned long noteInterval = 0;
 
-// ★音が出ているか（休符でない音符を再生中か）。動きのON/OFFを決める
-bool soundActive = false;
-
-// 動き管理
+// 弓（音符ごとに反転）
 bool bowDirection = false;
-bool mouthDirection = false;
-unsigned long lastBowMove = 0;
-unsigned long lastMouthMove = 0;
+
+// 口（BPM変化時の歌唱演出 emotion）
+bool emotionActive = false;
+unsigned long emotionEndTime = 0;
+unsigned long lastEmotionMoveTime = 0;
+bool emotionDirection = false;
+const int EMOTION_BEATS = 4;        // BPM変化時に何拍ぶん口を動かすか
+
+// BPM自動変更（testtest相当）
+unsigned long bpmChangeTime = 0;
+const unsigned long BPM_CHANGE_INTERVAL = 15000UL; // 15秒ごとに 120↔160
 
 // ==========================================
-// 楽譜（新仕様）
-//   0〜7   : デフォルト音階
-//   8〜12  : 全休符
-//   13〜20 : 1オクターブ上
-//   21〜24 : 全休符
-//   25〜39 : 終了（全休符）
+// 楽譜：基本オクターブの「かえるのうた」（休符を詰めて連続）
+//   ・オクターブ上は使わない
+//   ・8小節を1セットとして全40小節に繰り返しコピー
 // ==========================================
 void setupScore() {
-  // 音色チェック用：基本オクターブの「かえるのうた」を休符を詰めてずっと流す。
-  //   ・オクターブ上(C5〜)は使わない
-  //   ・フレーズ末の休符は、最後の音を伸ばして詰める（無音を減らす）
-  //   ・8小節を1セットとして全40小節に繰り返しコピー
   Pfm unit[8];
   unit[0] = {{ {NOTE_C4,1.0,DOWN_BOW}, {NOTE_D4,1.0,UP_BOW}, {NOTE_E4,1.0,DOWN_BOW}, {NOTE_F4,1.0,UP_BOW} }, 4};
   unit[1] = {{ {NOTE_E4,1.0,DOWN_BOW}, {NOTE_D4,1.0,UP_BOW}, {NOTE_C4,2.0,DOWN_BOW} }, 3};   // 最後のドを伸ばす
   unit[2] = {{ {NOTE_E4,1.0,DOWN_BOW}, {NOTE_F4,1.0,UP_BOW}, {NOTE_G4,1.0,DOWN_BOW}, {NOTE_A4,1.0,UP_BOW} }, 4};
   unit[3] = {{ {NOTE_G4,1.0,DOWN_BOW}, {NOTE_F4,1.0,UP_BOW}, {NOTE_E4,2.0,DOWN_BOW} }, 3};
-  // クヮ：短いスタッカート＋短い休符で「クヮ！クヮ！」と歯切れよく
   // クヮ：少し伸ばして最後は切る「クヮー！」（音1.0拍＋休符1.0拍）
   unit[4] = {{ {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW}, {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW} }, 4};
   unit[5] = {{ {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW}, {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW} }, 4};
@@ -119,13 +109,20 @@ void setup() {
   mouthServo.write(MOUTH_CLOSE_ANGLE);
 
   setupScore();
-  ToneLength = 60000.0 / currentBPM;
+  calculateBeatInterval();
 
-  Serial.println("VIOLIN 統合テスト開始（音＋弓引き＋口パク, Wi-Fi不要）");
+  bpmChangeTime = millis() + BPM_CHANGE_INTERVAL;
+  Serial.println("VIOLIN 統合テスト開始（音符ごとの弓＋BPM自動変更で口パク, Wi-Fi不要）");
 }
 
 void loop() {
   unsigned long now = millis();
+
+  // ---- BPM自動変更（testtest相当：15秒ごとに 120↔160）----
+  if ((long)(now - bpmChangeTime) >= 0) {
+    updateBPM(currentBPM == 120 ? 160 : 120);
+    bpmChangeTime = now + BPM_CHANGE_INTERVAL;
+  }
 
   // ---- 仮想サーバー：1小節ぶんの時間が経ったら次の小節へ ----
   unsigned long barDuration = (unsigned long)(ToneLength * BEATS_PER_BAR);
@@ -135,19 +132,28 @@ void loop() {
     if (virtualServerBar == 255 || virtualServerBar >= 39) virtualServerBar = 0;
     else virtualServerBar++;
 
-    // BPMは120固定（テンポ変更はしない）
-
     int myBar = (int)virtualServerBar + Offset;
-    if (myBar < 0) {
-      currentBar = 255;   // まだ自分の出番でない（Offsetが負のとき）
-      soundActive = false;
-    } else {
-      startBar((uint8_t)myBar);
-    }
+    if (myBar < 0) currentBar = 255;   // まだ自分の出番でない（Offsetが負のとき）
+    else           startBar((uint8_t)myBar);
   }
 
-  updateSound(now);     // 音符をProcessingへ送信（soundActiveを更新）
-  updateMovement(now);  // 弓と口の動き（音が出ている間だけ）
+  updateSound(now);    // 音符をProcessingへ送信＋弓を音符ごとに動かす
+  updateEmotion(now);  // 口（BPM変化時の歌唱演出）
+}
+
+void calculateBeatInterval() {
+  ToneLength = 60000.0 / currentBPM;
+  beatInterval = (unsigned long)ToneLength;
+}
+
+// BPM更新（テンポを変えて口の演出を発動）
+void updateBPM(uint8_t newBPM) {
+  if (newBPM == currentBPM) return;
+  currentBPM = newBPM;
+  calculateBeatInterval();
+  Serial.print("BPM -> ");
+  Serial.println(currentBPM);
+  startEmotion();
 }
 
 // 新しい小節を開始（音符を先頭から）
@@ -158,10 +164,9 @@ void startBar(uint8_t bar) {
   noteInterval = 0;   // すぐ最初の音を鳴らす
 }
 
-// ---- 音：1音ずつProcessingへ「freq,ms,弾き方」を送る ----
-//      送信のたびに「音が出ているか(soundActive)」を更新する
+// ---- 音＋弓：音符を1つずつ送り、音符ごとに弓を反転（休符は待機へ）----
 void updateSound(unsigned long now) {
-  if (currentBar >= 40) { soundActive = false; return; }
+  if (currentBar >= 40) return;
   if (now - noteStartTime < noteInterval) return;
 
   if (NoteIndex < Score[currentBar].noteCount) {
@@ -172,36 +177,47 @@ void updateSound(unsigned long now) {
     noteInterval  = (unsigned long)(ToneLength * dur);
     noteStartTime = now;
 
-    // ★この音符が鳴る音か休符かで、動きのON/OFFを決める
-    soundActive = (freq > 0);
-
     // Processingへ送信（freq=0 の休符は鳴らされない）
     Serial.print(freq); Serial.print(",");
     Serial.print(noteInterval); Serial.print(",");
     Serial.println(art);
 
+    // 弓：音が出る音符のたびに反転、休符では待機位置へ
+    if (freq > 0) {
+      bowDirection = !bowDirection;
+      bowServo.write(bowDirection ? BOW_LEFT_ANGLE : BOW_RIGHT_ANGLE);
+    } else {
+      bowServo.write(ARM_REST_ANGLE);
+    }
+
     NoteIndex++;
   }
 }
 
-// ---- 弓と口：音が出ている間だけ、一定間隔で動かし続ける ----
-void updateMovement(unsigned long now) {
-  if (soundActive) {
-    // 弓：一定間隔で反転（弓引きを表現）
-    if (now - lastBowMove >= BOW_MOVE_INTERVAL) {
-      lastBowMove = now;
-      bowDirection = !bowDirection;
-      bowServo.write(bowDirection ? BOW_LEFT_ANGLE : BOW_RIGHT_ANGLE);
-    }
-    // 口：一定間隔で開閉（歌っている演出）
-    if (now - lastMouthMove >= MOUTH_MOVE_INTERVAL) {
-      lastMouthMove = now;
-      mouthDirection = !mouthDirection;
-      mouthServo.write(mouthDirection ? MOUTH_OPEN_ANGLE : MOUTH_CLOSE_ANGLE);
-    }
-  } else {
-    // 休符：弓も口もすぐ止める
-    bowServo.write(ARM_REST_ANGLE);
+// BPM変化で口パク開始
+void startEmotion() {
+  emotionActive = true;
+  emotionEndTime = millis() + (unsigned long)(ToneLength * EMOTION_BEATS);
+  lastEmotionMoveTime = 0;
+  emotionDirection = false;
+}
+
+// 口：BPM変化時に上下にパタパタ（emotion）
+void updateEmotion(unsigned long now) {
+  if (!emotionActive) return;
+
+  if ((long)(now - emotionEndTime) >= 0) {
     mouthServo.write(MOUTH_CLOSE_ANGLE);
+    emotionActive = false;
+    return;
+  }
+
+  unsigned long interval = (unsigned long)(ToneLength / 2);
+  if (interval < 100) interval = 100;
+
+  if (now - lastEmotionMoveTime >= interval) {
+    lastEmotionMoveTime = now;
+    emotionDirection = !emotionDirection;
+    mouthServo.write(emotionDirection ? MOUTH_OPEN_ANGLE : MOUTH_CLOSE_ANGLE);
   }
 }
