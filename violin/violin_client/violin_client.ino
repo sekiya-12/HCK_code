@@ -92,8 +92,10 @@ void setupScore() {
   Score[1] = {{ {NOTE_E4,1.0,DOWN_BOW}, {NOTE_D4,1.0,UP_BOW}, {NOTE_C4,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};
   Score[2] = {{ {NOTE_E4,1.0,DOWN_BOW}, {NOTE_F4,1.0,UP_BOW}, {NOTE_G4,1.0,DOWN_BOW}, {NOTE_A4,1.0,UP_BOW} }, 4};
   Score[3] = {{ {NOTE_G4,1.0,DOWN_BOW}, {NOTE_F4,1.0,UP_BOW}, {NOTE_E4,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-  Score[4] = {{ {NOTE_C4,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW}, {NOTE_C4,1.0,UP_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-  Score[5] = {{ {NOTE_C4,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW}, {NOTE_C4,1.0,UP_BOW}, {REST,1.0,DOWN_BOW} }, 4};
+  // クヮ：短いスタッカート＋短い休符で「クヮ！クヮ！」と歯切れよく
+  // クヮ：少し伸ばして最後は切る「クヮー！」（音1.0拍＋休符1.0拍）
+  Score[4] = {{ {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW}, {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW} }, 4};
+  Score[5] = {{ {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW}, {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW} }, 4};
   Score[6] = {{ {NOTE_C4,0.5,DOWN_BOW}, {NOTE_C4,0.5,UP_BOW}, {NOTE_D4,0.5,DOWN_BOW}, {NOTE_D4,0.5,UP_BOW},
                 {NOTE_E4,0.5,DOWN_BOW}, {NOTE_E4,0.5,UP_BOW}, {NOTE_F4,0.5,DOWN_BOW}, {NOTE_F4,0.5,UP_BOW} }, 8};
   Score[7] = {{ {NOTE_E4,1.0,DOWN_BOW}, {NOTE_D4,1.0,UP_BOW}, {NOTE_C4,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};

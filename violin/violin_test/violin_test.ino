@@ -18,6 +18,7 @@
 // ---------- 楽譜データ構造 ----------
 #define DOWN_BOW 0   // 下げ弓 → Processing art==0
 #define UP_BOW   1   // 上げ弓 → Processing art==1
+#define STACCATO 2   // 短く歯切れよく → Processing art==2
 
 struct NoteData { float freq; float duration; int art; };
 struct Pfm      { NoteData notes[8]; int noteCount; };
@@ -90,30 +91,24 @@ unsigned long lastMouthMove = 0;
 //   25〜39 : 終了（全休符）
 // ==========================================
 void setupScore() {
-  Score[0] = {{ {NOTE_C4,1.0,DOWN_BOW}, {NOTE_D4,1.0,UP_BOW}, {NOTE_E4,1.0,DOWN_BOW}, {NOTE_F4,1.0,UP_BOW} }, 4};
-  Score[1] = {{ {NOTE_E4,1.0,DOWN_BOW}, {NOTE_D4,1.0,UP_BOW}, {NOTE_C4,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-  Score[2] = {{ {NOTE_E4,1.0,DOWN_BOW}, {NOTE_F4,1.0,UP_BOW}, {NOTE_G4,1.0,DOWN_BOW}, {NOTE_A4,1.0,UP_BOW} }, 4};
-  Score[3] = {{ {NOTE_G4,1.0,DOWN_BOW}, {NOTE_F4,1.0,UP_BOW}, {NOTE_E4,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-  Score[4] = {{ {NOTE_C4,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW}, {NOTE_C4,1.0,UP_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-  Score[5] = {{ {NOTE_C4,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW}, {NOTE_C4,1.0,UP_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-  Score[6] = {{ {NOTE_C4,0.5,DOWN_BOW}, {NOTE_C4,0.5,UP_BOW}, {NOTE_D4,0.5,DOWN_BOW}, {NOTE_D4,0.5,UP_BOW},
-                {NOTE_E4,0.5,DOWN_BOW}, {NOTE_E4,0.5,UP_BOW}, {NOTE_F4,0.5,DOWN_BOW}, {NOTE_F4,0.5,UP_BOW} }, 8};
-  Score[7] = {{ {NOTE_E4,1.0,DOWN_BOW}, {NOTE_D4,1.0,UP_BOW}, {NOTE_C4,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};
+  // 音色チェック用：基本オクターブの「かえるのうた」を休符を詰めてずっと流す。
+  //   ・オクターブ上(C5〜)は使わない
+  //   ・フレーズ末の休符は、最後の音を伸ばして詰める（無音を減らす）
+  //   ・8小節を1セットとして全40小節に繰り返しコピー
+  Pfm unit[8];
+  unit[0] = {{ {NOTE_C4,1.0,DOWN_BOW}, {NOTE_D4,1.0,UP_BOW}, {NOTE_E4,1.0,DOWN_BOW}, {NOTE_F4,1.0,UP_BOW} }, 4};
+  unit[1] = {{ {NOTE_E4,1.0,DOWN_BOW}, {NOTE_D4,1.0,UP_BOW}, {NOTE_C4,2.0,DOWN_BOW} }, 3};   // 最後のドを伸ばす
+  unit[2] = {{ {NOTE_E4,1.0,DOWN_BOW}, {NOTE_F4,1.0,UP_BOW}, {NOTE_G4,1.0,DOWN_BOW}, {NOTE_A4,1.0,UP_BOW} }, 4};
+  unit[3] = {{ {NOTE_G4,1.0,DOWN_BOW}, {NOTE_F4,1.0,UP_BOW}, {NOTE_E4,2.0,DOWN_BOW} }, 3};
+  // クヮ：短いスタッカート＋短い休符で「クヮ！クヮ！」と歯切れよく
+  // クヮ：少し伸ばして最後は切る「クヮー！」（音1.0拍＋休符1.0拍）
+  unit[4] = {{ {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW}, {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW} }, 4};
+  unit[5] = {{ {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW}, {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW} }, 4};
+  unit[6] = {{ {NOTE_C4,0.5,DOWN_BOW}, {NOTE_C4,0.5,UP_BOW}, {NOTE_D4,0.5,DOWN_BOW}, {NOTE_D4,0.5,UP_BOW},
+               {NOTE_E4,0.5,DOWN_BOW}, {NOTE_E4,0.5,UP_BOW}, {NOTE_F4,0.5,DOWN_BOW}, {NOTE_F4,0.5,UP_BOW} }, 8}; // ケケケ
+  unit[7] = {{ {NOTE_E4,1.0,DOWN_BOW}, {NOTE_D4,1.0,UP_BOW}, {NOTE_C4,2.0,DOWN_BOW} }, 3};
 
-  for (int i = 8; i <= 12; i++) Score[i] = {{ {REST,4.0,DOWN_BOW} }, 1};
-
-  Score[13] = {{ {NOTE_C5,1.0,DOWN_BOW}, {NOTE_D5,1.0,UP_BOW}, {NOTE_E5,1.0,DOWN_BOW}, {NOTE_F5,1.0,UP_BOW} }, 4};
-  Score[14] = {{ {NOTE_E5,1.0,DOWN_BOW}, {NOTE_D5,1.0,UP_BOW}, {NOTE_C5,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-  Score[15] = {{ {NOTE_E5,1.0,DOWN_BOW}, {NOTE_F5,1.0,UP_BOW}, {NOTE_G5,1.0,DOWN_BOW}, {NOTE_A5,1.0,UP_BOW} }, 4};
-  Score[16] = {{ {NOTE_G5,1.0,DOWN_BOW}, {NOTE_F5,1.0,UP_BOW}, {NOTE_E5,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-  Score[17] = {{ {NOTE_C5,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW}, {NOTE_C5,1.0,UP_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-  Score[18] = {{ {NOTE_C5,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW}, {NOTE_C5,1.0,UP_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-  Score[19] = {{ {NOTE_C5,0.5,DOWN_BOW}, {NOTE_C5,0.5,UP_BOW}, {NOTE_D5,0.5,DOWN_BOW}, {NOTE_D5,0.5,UP_BOW},
-                 {NOTE_E5,0.5,DOWN_BOW}, {NOTE_E5,0.5,UP_BOW}, {NOTE_F5,0.5,DOWN_BOW}, {NOTE_F5,0.5,UP_BOW} }, 8};
-  Score[20] = {{ {NOTE_E5,1.0,DOWN_BOW}, {NOTE_D5,1.0,UP_BOW}, {NOTE_C5,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-
-  for (int i = 21; i <= 24; i++) Score[i] = {{ {REST,4.0,DOWN_BOW} }, 1};
-  for (int i = 25; i < 40; i++)  Score[i] = {{ {REST,4.0,DOWN_BOW} }, 1};
+  for (int i = 0; i < 40; i++) Score[i] = unit[i % 8];
 }
 
 void setup() {
