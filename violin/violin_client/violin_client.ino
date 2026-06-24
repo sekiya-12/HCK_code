@@ -72,12 +72,18 @@ const int MOUTH_OPEN_ANGLE  = 60;  // 口を開く
 unsigned long BOW_MOVE_INTERVAL   = 550;  // 弓を反転する間隔(ms)＠BPM120基準。BPMに連動して伸縮
 unsigned long MOUTH_MOVE_INTERVAL = 400;  // 口を開閉する間隔(ms)＠BPM120基準。BPMに連動して伸縮
 
-// 動き管理
+// 動き管理（弓）
 bool soundActive = false;
 bool bowDirection = false;
-bool mouthDirection = false;
 unsigned long lastBowMove = 0;
-unsigned long lastMouthMove = 0;
+
+// 口（BPM変化時の歌唱演出 emotion）
+bool emotionActive = false;
+unsigned long emotionEndTime = 0;
+unsigned long lastEmotionMoveTime = 0;
+bool emotionDirection = false;
+const int EMOTION_BEATS = 4;          // BPM変化時に何拍ぶん口を動かすか
+uint8_t lastBPMForEmotion = 120;      // BPM変化を検出するための前回値
 
 // ==========================================
 // 楽譜（新仕様）
@@ -102,15 +108,16 @@ void setupScore() {
 
   for (int i = 8; i <= 12; i++) Score[i] = {{ {REST,4.0,DOWN_BOW} }, 1};
 
-  Score[13] = {{ {NOTE_C5,1.0,DOWN_BOW}, {NOTE_D5,1.0,UP_BOW}, {NOTE_E5,1.0,DOWN_BOW}, {NOTE_F5,1.0,UP_BOW} }, 4};
-  Score[14] = {{ {NOTE_E5,1.0,DOWN_BOW}, {NOTE_D5,1.0,UP_BOW}, {NOTE_C5,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-  Score[15] = {{ {NOTE_E5,1.0,DOWN_BOW}, {NOTE_F5,1.0,UP_BOW}, {NOTE_G5,1.0,DOWN_BOW}, {NOTE_A5,1.0,UP_BOW} }, 4};
-  Score[16] = {{ {NOTE_G5,1.0,DOWN_BOW}, {NOTE_F5,1.0,UP_BOW}, {NOTE_E5,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-  Score[17] = {{ {NOTE_C5,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW}, {NOTE_C5,1.0,UP_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-  Score[18] = {{ {NOTE_C5,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW}, {NOTE_C5,1.0,UP_BOW}, {REST,1.0,DOWN_BOW} }, 4};
-  Score[19] = {{ {NOTE_C5,0.5,DOWN_BOW}, {NOTE_C5,0.5,UP_BOW}, {NOTE_D5,0.5,DOWN_BOW}, {NOTE_D5,0.5,UP_BOW},
-                 {NOTE_E5,0.5,DOWN_BOW}, {NOTE_E5,0.5,UP_BOW}, {NOTE_F5,0.5,DOWN_BOW}, {NOTE_F5,0.5,UP_BOW} }, 8};
-  Score[20] = {{ {NOTE_E5,1.0,DOWN_BOW}, {NOTE_D5,1.0,UP_BOW}, {NOTE_C5,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};
+  // 13〜20 も基本オクターブにする（オクターブ上は鳴らさない＝0〜7と同じ旋律）
+  Score[13] = {{ {NOTE_C4,1.0,DOWN_BOW}, {NOTE_D4,1.0,UP_BOW}, {NOTE_E4,1.0,DOWN_BOW}, {NOTE_F4,1.0,UP_BOW} }, 4};
+  Score[14] = {{ {NOTE_E4,1.0,DOWN_BOW}, {NOTE_D4,1.0,UP_BOW}, {NOTE_C4,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};
+  Score[15] = {{ {NOTE_E4,1.0,DOWN_BOW}, {NOTE_F4,1.0,UP_BOW}, {NOTE_G4,1.0,DOWN_BOW}, {NOTE_A4,1.0,UP_BOW} }, 4};
+  Score[16] = {{ {NOTE_G4,1.0,DOWN_BOW}, {NOTE_F4,1.0,UP_BOW}, {NOTE_E4,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};
+  Score[17] = {{ {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW}, {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW} }, 4};
+  Score[18] = {{ {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW}, {NOTE_C4,1.0,STACCATO}, {REST,1.0,DOWN_BOW} }, 4};
+  Score[19] = {{ {NOTE_C4,0.5,DOWN_BOW}, {NOTE_C4,0.5,UP_BOW}, {NOTE_D4,0.5,DOWN_BOW}, {NOTE_D4,0.5,UP_BOW},
+                 {NOTE_E4,0.5,DOWN_BOW}, {NOTE_E4,0.5,UP_BOW}, {NOTE_F4,0.5,DOWN_BOW}, {NOTE_F4,0.5,UP_BOW} }, 8};
+  Score[20] = {{ {NOTE_E4,1.0,DOWN_BOW}, {NOTE_D4,1.0,UP_BOW}, {NOTE_C4,1.0,DOWN_BOW}, {REST,1.0,DOWN_BOW} }, 4};
 
   for (int i = 21; i <= 24; i++) Score[i] = {{ {REST,4.0,DOWN_BOW} }, 1};
   for (int i = 25; i < 40; i++)  Score[i] = {{ {REST,4.0,DOWN_BOW} }, 1};
@@ -161,8 +168,15 @@ void loop() {
   // 4. いま鳴っている音符が「鳴る音」かどうかで動きのON/OFFを決める
   soundActive = isSounding();
 
-  // 5. 弓と口の動き（音が出ている間だけ動かし続ける）
+  // 4.5 BPMが変わったら口の演出（emotion）を発動
+  if (CurrentBPM != lastBPMForEmotion) {
+    lastBPMForEmotion = CurrentBPM;
+    startEmotion();
+  }
+
+  // 5. 動きの更新（弓＝演奏中、口＝BPM変化時の演出）
   updateMovement(millis());
+  updateEmotion(millis());
 }
 
 // いま鳴っている音符が休符でない（freq>0）か？
@@ -174,14 +188,18 @@ bool isSounding() {
   return Score[CurrentBar].notes[idx].freq > 0;
 }
 
-// 弓と口：音が出ている間だけ動かし続ける（間隔はBPMに連動して伸縮）
+// その小節が「全休符の小節」か（長い無音）。弓を待機位置へ戻す対象
+bool isWholeRestBar(uint8_t bar) {
+  if (bar >= 40) return true;   // 出番待ちなども待機扱い
+  return (Score[bar].noteCount == 1 && Score[bar].notes[0].freq <= 0);
+}
+
+// 弓：音が出ている間だけ動かし続ける（間隔はBPMに連動して伸縮）
 void updateMovement(unsigned long now) {
   // BPM120(ToneLength=500)を基準に、テンポが速いほど間隔を短く＝動きも速く
   float tempoScale = ToneLength / 500.0;
-  unsigned long bowInt   = (unsigned long)(BOW_MOVE_INTERVAL   * tempoScale);
-  unsigned long mouthInt = (unsigned long)(MOUTH_MOVE_INTERVAL * tempoScale);
-  if (bowInt   < 30) bowInt   = 30;   // 速すぎ防止の下限
-  if (mouthInt < 30) mouthInt = 30;
+  unsigned long bowInt = (unsigned long)(BOW_MOVE_INTERVAL * tempoScale);
+  if (bowInt < 30) bowInt = 30;   // 速すぎ防止の下限
 
   if (soundActive) {
     if (now - lastBowMove >= bowInt) {
@@ -189,14 +207,38 @@ void updateMovement(unsigned long now) {
       bowDirection = !bowDirection;
       bowServo.write(bowDirection ? BOW_LEFT_ANGLE : BOW_RIGHT_ANGLE);
     }
-    if (now - lastMouthMove >= mouthInt) {
-      lastMouthMove = now;
-      mouthDirection = !mouthDirection;
-      mouthServo.write(mouthDirection ? MOUTH_OPEN_ANGLE : MOUTH_CLOSE_ANGLE);
-    }
   } else {
-    // 休符：弓も口もすぐ止める
-    bowServo.write(ARM_REST_ANGLE);
+    // 休符：長い全休符のみ弓を待機位置へ（短い休符は弓を保持）
+    if (isWholeRestBar(CurrentBar)) {
+      bowServo.write(ARM_REST_ANGLE);
+    }
+  }
+}
+
+// BPM変化で口パク開始
+void startEmotion() {
+  emotionActive = true;
+  emotionEndTime = millis() + (unsigned long)(ToneLength * EMOTION_BEATS);
+  lastEmotionMoveTime = 0;
+  emotionDirection = false;
+}
+
+// 口：BPM変化時に上下にパタパタ（emotion）。それ以外は閉じたまま
+void updateEmotion(unsigned long now) {
+  if (!emotionActive) return;
+
+  if ((long)(now - emotionEndTime) >= 0) {
     mouthServo.write(MOUTH_CLOSE_ANGLE);
+    emotionActive = false;
+    return;
+  }
+
+  unsigned long interval = (unsigned long)(ToneLength / 2);
+  if (interval < 100) interval = 100;
+
+  if (now - lastEmotionMoveTime >= interval) {
+    lastEmotionMoveTime = now;
+    emotionDirection = !emotionDirection;
+    mouthServo.write(emotionDirection ? MOUTH_OPEN_ANGLE : MOUTH_CLOSE_ANGLE);
   }
 }

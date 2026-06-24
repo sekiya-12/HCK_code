@@ -44,8 +44,8 @@ const int MOUTH_PIN = 5;
 
 // ---------- 角度（実機に合わせて調整） ----------
 const int ARM_REST_ANGLE    = 80;  // 弓の待機位置
-const int BOW_LEFT_ANGLE     = 75;  // 下げ弓側
-const int BOW_RIGHT_ANGLE    = 90;  // 上げ弓側
+const int BOW_LEFT_ANGLE     = 60;  // 下げ弓側
+const int BOW_RIGHT_ANGLE    = 65;  // 上げ弓側
 const int MOUTH_CLOSE_ANGLE  = 90;  // 口を閉じる
 const int MOUTH_OPEN_ANGLE   = 60;  // 口を開く
 
@@ -182,12 +182,11 @@ void updateSound(unsigned long now) {
     Serial.print(noteInterval); Serial.print(",");
     Serial.println(art);
 
-    // 弓：音が出る音符のたびに反転、休符では待機位置へ
+    // 弓：音が出る音符のたびに反転。休符ではその場で保持（待機位置へ戻さない）
+    //   → クヮの短い休符でも弓が大きく動かず、振り幅が他と揃う
     if (freq > 0) {
       bowDirection = !bowDirection;
       bowServo.write(bowDirection ? BOW_LEFT_ANGLE : BOW_RIGHT_ANGLE);
-    } else {
-      bowServo.write(ARM_REST_ANGLE);
     }
 
     NoteIndex++;
