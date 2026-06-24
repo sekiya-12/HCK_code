@@ -76,7 +76,7 @@ const int VIOLIN_BOW_LEFT_ANGLE  = 65;
 const int VIOLIN_BOW_RIGHT_ANGLE = 115;
 
 // カスタネット
-const int CASTANET_PLAY_ANGLE = 70;
+const int CASTANET_PLAY_ANGLE = 50;
 
 // ヴァイオリン首
 const int HEAD_CENTER_ANGLE = 90;
