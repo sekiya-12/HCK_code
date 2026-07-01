@@ -39,6 +39,12 @@ String  currentNoteName    = "ーー";
 boolean currentIsRest      = true;
 boolean hasReceivedAnyData = false;
 
+// ---- 受信ログ（発音数の検証用CSV） ----
+//   起動時に violin_recv_log.csv を作成し、受信した音符を1行ずつ記録する。
+//   k キーで保存して閉じる（閉じなくても1行ごとに書き込まれる）。
+PrintWriter recvLog;
+int recvCount = 0;
+
 // =====================================================================
 // ★音色つまみ（演奏を聞きながらキーで調整できる）
 //   金管/ポォー → 弦らしく したいときの目安：
@@ -77,6 +83,11 @@ void setup() {
   }
   for (int i = 0; i < 1024; i++) waveData[i] /= maxVal;
   customViolinWave = new Wavetable(waveData);
+
+  // 受信ログCSVを作成（ヘッダ行を書く）
+  recvLog = createWriter("violin_recv_log.csv");
+  recvLog.println("番号,周波数Hz,長さms,弾き方,音名,種別");
+  recvLog.flush();
 
   println("利用可能なシリアルポート一覧:");
   printArray(Serial.list());
@@ -169,6 +180,14 @@ void serialEvent(Serial p) {
   float freq = float(data[0]);
   float durationMs = float(data[1]);
   int articulation = int(data[2]);
+
+  // 受信した音符をCSVに記録（発音数の検証用）
+  recvCount++;
+  String shubetsu = (freq > 0) ? "発音" : "休符";
+  recvLog.println(recvCount + "," + int(freq) + "," + int(durationMs) + ","
+                  + articulation + "," + noteNameFor(freq) + "," + shubetsu);
+  recvLog.flush();
+
   triggerNote(freq, durationMs, articulation);
 }
 
@@ -227,6 +246,11 @@ void keyPressed() {
   else if (key == 'd') { gReso = max(0, gReso-0.03);     printTone(); }
   else if (key == 'r') { gSaw += 0.05; gBody = max(0, gBody-0.05); printTone(); } // 弦寄り
   else if (key == 'f') { gSaw = max(0, gSaw-0.05); gBody += 0.05;  printTone(); } // 胴/丸み寄り
+  // ---- 受信ログの保存 ----
+  else if (key == 'k' || key == 'K') {
+    recvLog.flush();
+    println("受信ログ保存: violin_recv_log.csv（" + recvCount + " 行）");
+  }
 }
 
 void printTone() {
@@ -252,6 +276,7 @@ void updateTestRun() {
 }
 
 void stop() {
+  if (recvLog != null) { recvLog.flush(); recvLog.close(); }
   out.close();
   minim.stop();
   super.stop();

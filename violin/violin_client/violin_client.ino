@@ -62,11 +62,13 @@ const int BOW_PIN   = 9;
 const int MOUTH_PIN = 5;
 
 // 角度（実機に合わせて調整。テストで詰めた値）
-const int ARM_REST_ANGLE   = 80;   // 弓の待機位置
-const int BOW_LEFT_ANGLE    = 75;  // 下げ弓側
-const int BOW_RIGHT_ANGLE   = 90;  // 上げ弓側
-const int MOUTH_CLOSE_ANGLE = 90;  // 口を閉じる
-const int MOUTH_OPEN_ANGLE  = 60;  // 口を開く
+const int ARM_REST_ANGLE   = 70;   // 弓の待機位置
+const int BOW_LEFT_ANGLE    = 80;  // 下げ弓側
+const int BOW_RIGHT_ANGLE   = 67;  // 上げ弓側
+const int MOUTH_CLOSE_ANGLE = 100;  // 口を閉じる
+const int 
+]
+\  = 35;  // 口を開く
 
 // 動きの速さ（msを大きくするとゆっくり）
 unsigned long BOW_MOVE_INTERVAL   = 550;  // 弓を反転する間隔(ms)＠BPM120基準。BPMに連動して伸縮
