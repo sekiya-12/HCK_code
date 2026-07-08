@@ -38,9 +38,9 @@
 #define BARS_PER_PERFORMANCE 12     // 輪唱1回あたりの小節数（小節 0~11）
 #define OFFSET_DEFAULT       0      // デフォルト音階の先頭小節番号
 #define OFFSET_OCTAVE        13     // 1オクターブ上の先頭小節番号
-#define CURTAIN_MOVE_MS      3000   // カーテンを開閉しきるまでの時間 [ms]
+#define CURTAIN_MOVE_MS      7500   // カーテンを開閉しきるまでの時間 [ms]
 #define WAIT_MS              1000   // 演奏開始前・終了後の待機時間 [ms]
-#define MOTOR_SPEED          120    // カーテンモータの速度（ゆっくり） 0~255
+#define MOTOR_SPEED          200    // カーテンモータの速度（ゆっくり） 0~255
 
 // ============================================================
 //  演奏フローの状態
@@ -59,16 +59,16 @@ enum StageState {
 //  カーテンモータ制御
 // ------------------------------------------------------------
 static void curtainOpen() {   // カーテンを開く（正転）
-  analogWrite(PIN_MOTOR_IN1, MOTOR_SPEED);
-  digitalWrite(PIN_MOTOR_IN2, LOW);
+  digitalWrite(PIN_MOTOR_IN1, LOW);
+  digitalWrite(PIN_MOTOR_IN2, HIGH);
 }
 static void curtainClose() {  // カーテンを閉じる（逆転）
-  digitalWrite(PIN_MOTOR_IN1, LOW);
-  analogWrite(PIN_MOTOR_IN2, MOTOR_SPEED);
-}
-static void curtainStop() {   // モータ停止
-  digitalWrite(PIN_MOTOR_IN1, LOW);
+  digitalWrite(PIN_MOTOR_IN1, HIGH);
   digitalWrite(PIN_MOTOR_IN2, LOW);
+}
+static void curtainStop() {   // モータ停止（ブレーキ）imate -
+  digitalWrite(PIN_MOTOR_IN1, HIGH);
+  digitalWrite(PIN_MOTOR_IN2, HIGH);
 }
 
 // ------------------------------------------------------------
@@ -133,12 +133,12 @@ static bool detectPress(uint8_t pin, int *lastReading, int *stableState, uint32_
   return false;
 }
 
-// -----------------------------------------------------------
+// ------------------------------------------------------------
 //  舞台・演奏の状態制御
 //  ボタン押下で開始 → カーテンを開く → 1秒待機 →
 //  小節番号を送信しながら演奏（スポットライト制御）→
 //  1秒待機 → カーテンを閉じる → ボタン待機に戻る
-// -----------------------------------------------------------
+// ------------------------------------------------------------
 void Stage_control(uint16_t Interval, IPAddress BCaddress, uint16_t Port, WiFiUDP &udp) {
 
   // --- 状態機械の内部状態（呼び出しをまたいで保持するため static） ---
@@ -170,7 +170,7 @@ void Stage_control(uint16_t Interval, IPAddress BCaddress, uint16_t Port, WiFiUD
         Serial.println(startOctave ? "1オクターブ上" : "デフォルト");
 
         // カーテンを開け始める
-        curtainOpen();
+        //curtainOpen();
         phaseTime = now;
         state = STAGE_OPEN_CURTAIN;
       }
@@ -179,6 +179,7 @@ void Stage_control(uint16_t Interval, IPAddress BCaddress, uint16_t Port, WiFiUD
 
     // === カーテンを開ける ===
     case STAGE_OPEN_CURTAIN:
+      state = STAGE_WAIT_BEFORE;
       if (now - phaseTime >= CURTAIN_MOVE_MS) {
         curtainStop();              // 開ききったらモータ停止
         phaseTime = now;
@@ -232,7 +233,7 @@ void Stage_control(uint16_t Interval, IPAddress BCaddress, uint16_t Port, WiFiUD
     // === 演奏終了後の待機（1秒）===
     case STAGE_WAIT_AFTER:
       if (now - phaseTime >= WAIT_MS) {
-        curtainClose();             // カーテンを閉じ始める
+        //curtainClose();             // カーテンを閉じ始める
         phaseTime = now;
         state = STAGE_CLOSE_CURTAIN;
       }
@@ -240,6 +241,7 @@ void Stage_control(uint16_t Interval, IPAddress BCaddress, uint16_t Port, WiFiUD
 
     // === カーテンを閉じる ===
     case STAGE_CLOSE_CURTAIN:
+      state = STAGE_WAIT_BUTTON;
       if (now - phaseTime >= CURTAIN_MOVE_MS) {
         curtainStop();              // 閉じきったらモータ停止
         state = STAGE_WAIT_BUTTON;  // 次の演奏のボタン待機へ戻る
