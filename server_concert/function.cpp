@@ -170,7 +170,7 @@ void Stage_control(uint16_t Interval, IPAddress BCaddress, uint16_t Port, WiFiUD
         Serial.println(startOctave ? "1オクターブ上" : "デフォルト");
 
         // カーテンを開け始める
-        //curtainOpen();
+        curtainOpen();
         phaseTime = now;
         state = STAGE_OPEN_CURTAIN;
       }
@@ -179,7 +179,6 @@ void Stage_control(uint16_t Interval, IPAddress BCaddress, uint16_t Port, WiFiUD
 
     // === カーテンを開ける ===
     case STAGE_OPEN_CURTAIN:
-      state = STAGE_WAIT_BEFORE;
       if (now - phaseTime >= CURTAIN_MOVE_MS) {
         curtainStop();              // 開ききったらモータ停止
         phaseTime = now;
@@ -233,15 +232,14 @@ void Stage_control(uint16_t Interval, IPAddress BCaddress, uint16_t Port, WiFiUD
     // === 演奏終了後の待機（1秒）===
     case STAGE_WAIT_AFTER:
       if (now - phaseTime >= WAIT_MS) {
-        //curtainClose();             // カーテンを閉じ始める
+        curtainClose();             // カーテンを閉じ始める
         phaseTime = now;
         state = STAGE_CLOSE_CURTAIN;
       }
       break;
 
     // === カーテンを閉じる ===
-    case STAGE_CLOSE_CURTAIN:
-      state = STAGE_WAIT_BUTTON;
+    case STAGE_CLOSE_CURTAIN;
       if (now - phaseTime >= CURTAIN_MOVE_MS) {
         curtainStop();              // 閉じきったらモータ停止
         state = STAGE_WAIT_BUTTON;  // 次の演奏のボタン待機へ戻る
